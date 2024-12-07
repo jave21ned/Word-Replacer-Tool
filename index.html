@@ -153,8 +153,8 @@
 
               for (const [key, value] of Object.entries(replacementMap)) {
                 if (key.startsWith('_')) {
-                  const word = key.substring(1);
-                  const sentenceRegex = new RegExp(`[^.!?]*?\\b${escapeRegExp(word)}\\b[^.!?]*[.!?]`, 'g');
+                  const phrase = key.substring(1); // Remove underscore
+                  const sentenceRegex = new RegExp(`[^.!?]*?\\b${escapeRegExp(phrase)}\\b[^.!?]*[.!?]`, 'g');
                   processedText = processedText.replace(sentenceRegex, value);
                 } else {
                   const wordRegex = new RegExp(`\\b${escapeRegExp(key)}\\b`, 'g');
