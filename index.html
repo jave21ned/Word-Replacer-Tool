@@ -38,7 +38,7 @@
       padding: 10px;
       font-size: 16px;
       white-space: pre-wrap;
-      overflow-y: auto; /* Add vertical scrollbar */
+      overflow-y: auto;
     }
     #copyNotification {
       display: none;
@@ -50,9 +50,8 @@
       font-size: 14px;
       text-align: center;
     }
-    /* Add spacing between sections */
     .section {
-      margin-bottom: 30px; /* Increased spacing between sections */
+      margin-bottom: 30px;
     }
   </style>
 </head>
@@ -93,19 +92,23 @@
 
       // Split pairs by comma and map to an object without trimming spaces
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
-        const [key, value] = pair.split('=').map(str => str); // No trimming here
+        const [key, value] = pair.split('=').map(str => str.trim()); // Trim both key and value
         if (key && value) acc[key] = value; // Store key-value pairs as is
         return acc;
       }, {});
 
       let updatedContent = content;
+
+      // Loop through each replacement pair
       for (const [word, replacement] of Object.entries(replacements)) {
-        // Escape special regex characters and ensure proper matching of spaces and Chinese characters
-        const escapedWord = word.replace(/([.*+?^=!:${}()|\/\)/g, "\\$1"); // Escape special characters
-        const regex = new RegExp(escapedWord, 'gu'); // Global and Unicode flag
+        // Escape special characters in word (e.g., . * ?)
+        const escapedWord = word.replace(/([.*+?^=!:${}()|\/\)/g, "\\$1");
+        // Create a global, case-insensitive regex for the word
+        const regex = new RegExp(escapedWord, 'gi'); // 'g' for global, 'i' for case-insensitive
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
+      // Show the updated content in the result box
       document.getElementById('result').innerText = updatedContent;
     }
 
