@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multilingual Text Replacer with EPUB Support</title>
+  <title>Multilingual Text Replacer</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -53,18 +53,14 @@
     .section {
       margin-bottom: 30px;
     }
-    .hidden {
-      display: none;
-    }
   </style>
 </head>
 <body>
-  <h2>Multilingual Text Replacer Tool with EPUB Support</h2>
+  <h2>Multilingual Text Replacer Tool</h2>
 
-  <!-- Text Replacer Section -->
   <div class="section">
     <label for="replacementPairs">Enter replacements:</label>
-    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan,你好=Hello">
+    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan, 你好=Hello">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
   </div>
@@ -85,27 +81,13 @@
     <div id="copyNotification">Copied to clipboard!</div>
   </div>
 
-  <!-- EPUB Processor Section -->
-  <div class="section">
-    <h3>EPUB Processor Tool</h3>
-    <!-- EPUB Replacement Box -->
-    <div id="epubReplacementBox">
-      <label for="epubReplacements">EPUB Replacements:</label>
-      <textarea id="epubReplacements" rows="6" placeholder="_word=Replace full sentence with word, word=Replace just the word"></textarea>
-      <button onclick="pasteEpubReplacements()">Paste</button>
-    </div>
-
-    <!-- EPUB Upload and Process -->
-    <input type="file" id="epubFileInput" accept=".epub">
-    <button onclick="processEpub()">Process EPUB</button>
-    <button id="downloadButton" class="hidden" onclick="downloadEpub()">Download Processed EPUB</button>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/epubjs/0.3.88/epub.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script>
-    let processedEpubBlob;
+    // Helper function to escape special characters for use in a regular expression
+    function replaceSpecialCharacters(str) {
+      return str.replace(/[.*+?^=!:${}()|\/]/g, '\\$&');
+    }
 
+    // Replace words based on replacements
     function replaceWords() {
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
@@ -118,100 +100,112 @@
 
       let updatedContent = content;
       for (const [word, replacement] of Object.entries(replacements)) {
-        const regex = new RegExp(`\\b${escapeRegExp(word)}\\b`, 'g');
-        updatedContent = updatedContent.replace(regex, replacement);
+        const escapedWord = replaceSpecialCharacters(word);
+        const regex = new RegExp(escapedWord, 'gu');
+        updatedContent = updatedContent.replace(regex, ' ' + replacement); // Add space before replacement
       }
 
       document.getElementById('result').innerText = updatedContent;
     }
 
-    function processEpub() {
-      const fileInput = document.getElementById('epubFileInput');
-      const replacements = document.getElementById('epubReplacements').value;
-
-      if (!fileInput.files.length) {
-        alert("Please upload an EPUB file.");
+    // Copy result content to clipboard
+    function copyResult() {
+      const resultText = document.getElementById('result').innerText;
+      if (!resultText) {
+        showNotification("Nothing to copy!", true);
         return;
       }
-
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function () {
-        const zip = new JSZip();
-        zip.loadAsync(reader.result).then(async function (contents) {
-          const replacementMap = replacements.split(',').reduce((acc, pair) => {
-            const [key, value] = pair.split('=').map(str => str.trim());
-            if (key && value) acc[key] = value;
-            return acc;
-          }, {});
-
-          for (const [filename, fileContent] of Object.entries(contents.files)) {
-            if (filename.endsWith(".xhtml") || filename.endsWith(".html")) {
-              const text = await fileContent.async("text");
-              let processedText = text;
-
-              for (const [key, value] of Object.entries(replacementMap)) {
-                if (key.startsWith('_')) {
-                  const phrase = key.substring(1); // Remove underscore
-                  const sentenceRegex = new RegExp(`[^.!?]*?\\b${escapeRegExp(phrase)}\\b[^.!?]*[.!?]`, 'g');
-                  processedText = processedText.replace(sentenceRegex, value);
-                } else {
-                  const wordRegex = new RegExp(`\\b${escapeRegExp(key)}\\b`, 'g');
-                  processedText = processedText.replace(wordRegex, value);
-                }
-              }
-
-              zip.file(filename, processedText);
-            }
-          }
-
-          zip.generateAsync({ type: 'blob' }).then(function (blob) {
-            processedEpubBlob = blob;
-            const downloadButton = document.getElementById('downloadButton');
-            downloadButton.classList.remove('hidden');
-            downloadButton.disabled = false;
-          });
+      navigator.clipboard.writeText(resultText)
+        .then(() => showNotification("Copied to clipboard!"))
+        .catch(err => {
+          console.error("Copy failed: ", err);
+          showNotification("Failed to copy. Try again!", true);
         });
-      };
-
-      reader.readAsArrayBuffer(file);
     }
 
-    function downloadEpub() {
-      const fileInput = document.getElementById('epubFileInput');
-      const fileName = fileInput.files[0].name.replace(/\.epub$/, '_EDITED.epub');
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(processedEpubBlob);
-      link.href = url;
-      link.download = fileName;
-      link.click();
-      URL.revokeObjectURL(url);  // Clean up after download
+    // Paste content into the content input
+    function pasteContent() {
+      pasteIntoField('contentInput');
     }
 
-    function pasteEpubReplacements() {
-      pasteIntoField('epubReplacements');
+    // Paste content into the replacement pairs input
+    function pasteReplacement() {
+      pasteIntoField('replacementPairs');
     }
 
+    // Generic paste function with clipboard permissions
     function pasteIntoField(elementId) {
       const inputField = document.getElementById(elementId);
 
-      navigator.clipboard.readText().then(text => {
-        if (text) {
-          inputField.value = text;
-          alert("Content pasted successfully!");
-        } else {
-          alert("Clipboard is empty!");
-        }
-      }).catch(err => {
-        console.error("Paste failed: ", err);
-        alert("Paste failed. Clipboard might be empty.");
-      });
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
+          if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+            navigator.clipboard.readText()
+              .then(text => {
+                if (text) {
+                  inputField.value = text;
+                  showNotification("Content pasted successfully!");
+                } else {
+                  showNotification("Clipboard is empty!", true);
+                }
+              })
+              .catch(err => {
+                console.error("Paste failed (modern): ", err);
+                showNotification("Paste failed. Clipboard might be empty.", true);
+              });
+          } else {
+            showNotification("Clipboard access denied!", true);
+          }
+        }).catch(err => {
+          console.error("Clipboard permission check failed: ", err);
+          showNotification("Permission error. Paste not allowed.", true);
+        });
+      } else {
+        showNotification("Paste not supported in this browser.", true);
+      }
     }
 
-    function escapeRegExp(string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Select all text in an input or output field
+    function selectAll(elementId) {
+      const element = document.getElementById(elementId);
+      if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+        element.select();
+      } else if (element.tagName === 'DIV') {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      showNotification("Text selected!");
     }
+
+    // Show a notification message
+    function showNotification(message, isError = false) {
+      const notification = document.getElementById('copyNotification');
+      notification.innerText = message;
+      notification.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+
+    // Request clipboard permissions on page load
+    function requestClipboardPermissions() {
+      if (navigator.permissions) {
+        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
+          console.log("Clipboard permission status: ", permissionStatus.state);
+        }).catch(err => {
+          console.error("Failed to request clipboard permissions: ", err);
+        });
+      } else {
+        console.warn("Clipboard permissions API not supported in this browser.");
+      }
+    }
+
+    // Request permissions on load
+    window.onload = requestClipboardPermissions;
   </script>
 </body>
 </html>
