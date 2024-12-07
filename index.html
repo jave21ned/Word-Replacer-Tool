@@ -62,7 +62,7 @@
   <!-- Replacement Section -->
   <div class="section">
     <label for="replacementPairs">Enter replacements:</label>
-    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan,你好=Hello">
+    <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan, 你好= Hello">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
   </div>
@@ -91,15 +91,16 @@
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
 
+      // Split pairs by comma and map to an object without trimming spaces
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
-        const [key, value] = pair.split('=').map(str => str.trim());
-        if (key && value) acc[key] = value;
+        const [key, value] = pair.split('=').map(str => str); // No trimming here
+        if (key && value) acc[key] = value; // Store key-value pairs as is
         return acc;
       }, {});
 
       let updatedContent = content;
       for (const [word, replacement] of Object.entries(replacements)) {
-        const regex = new RegExp(word, 'gu');
+        const regex = new RegExp(`\\b${word}\\b`, 'gu'); // Word boundary to match full word only
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
