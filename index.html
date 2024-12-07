@@ -182,9 +182,11 @@
       const fileInput = document.getElementById('epubFileInput');
       const fileName = fileInput.files[0].name.replace(/\.epub$/, '_EDITED.epub');
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(processedEpubBlob);
+      const url = URL.createObjectURL(processedEpubBlob);
+      link.href = url;
       link.download = fileName;
       link.click();
+      URL.revokeObjectURL(url);  // Clean up after download
     }
 
     function pasteEpubReplacements() {
@@ -212,4 +214,4 @@
     }
   </script>
 </body>
-  </html>
+</html>
