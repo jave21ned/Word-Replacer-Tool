@@ -62,7 +62,7 @@
   <!-- Replacement Section -->
   <div class="section">
     <label for="replacementPairs">Enter replacements:</label>
-    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan, 你好=Hello">
+    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan,你好=Hello">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
   </div>
@@ -91,25 +91,18 @@
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
 
-      // Split pairs by comma and map to an object without trimming spaces
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
-        const [key, value] = pair.split('=').map(str => str.trim()); // Trim both key and value
-        if (key && value) acc[key] = value; // Store key-value pairs as is
+        const [key, value] = pair.split('=').map(str => str.trim());
+        if (key && value) acc[key] = value;
         return acc;
       }, {});
 
       let updatedContent = content;
-
-      // Loop through each replacement pair
       for (const [word, replacement] of Object.entries(replacements)) {
-        // Escape special characters in the word (e.g., . * ?)
-        const escapedWord = word.replace(/([.*+?^=!:${}()|\/\)/g, "\\$1");
-        // Create a global, case-insensitive regex for the word
-        const regex = new RegExp(escapedWord, 'gi'); // 'g' for global, 'i' for case-insensitive
+        const regex = new RegExp(word, 'gu');
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
-      // Show the updated content in the result box
       document.getElementById('result').innerText = updatedContent;
     }
 
