@@ -38,7 +38,7 @@
       padding: 10px;
       font-size: 16px;
       white-space: pre-wrap;
-      overflow-y: auto; /* Add vertical scrollbar */
+      overflow-y: auto;
     }
     #copyNotification {
       display: none;
@@ -50,24 +50,21 @@
       font-size: 14px;
       text-align: center;
     }
-    /* Add spacing between sections */
     .section {
-      margin-bottom: 30px; /* Increased spacing between sections */
+      margin-bottom: 30px;
     }
   </style>
 </head>
 <body>
   <h2>Multilingual Text Replacer Tool</h2>
 
-  <!-- Replacement Section -->
   <div class="section">
     <label for="replacementPairs">Enter replacements:</label>
-    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan,你好=Hello">
+    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan, 你好=Hello">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
   </div>
 
-  <!-- Content Section -->
   <div class="section">
     <label for="contentInput">Enter the content:</label>
     <textarea id="contentInput" rows="6" placeholder="输入需要处理的文本..."></textarea>
@@ -76,7 +73,6 @@
     <button onclick="replaceWords()">Replace Words</button>
   </div>
 
-  <!-- Result Section -->
   <div class="section">
     <h3>Result:</h3>
     <button onclick="copyResult()">Copy Result</button>
@@ -86,6 +82,11 @@
   </div>
 
   <script>
+    // Helper function to escape special characters for use in a regular expression
+    function replaceSpecialCharacters(str) {
+      return str.replace(/[.*+?^=!:${}()|\/]/g, '\\$&');
+    }
+
     // Replace words based on replacements
     function replaceWords() {
       const pairsInput = document.getElementById('replacementPairs').value;
@@ -99,8 +100,9 @@
 
       let updatedContent = content;
       for (const [word, replacement] of Object.entries(replacements)) {
-        const regex = new RegExp(word, 'gu');
-        updatedContent = updatedContent.replace(regex, replacement);
+        const escapedWord = replaceSpecialCharacters(word);
+        const regex = new RegExp(escapedWord, 'gu');
+        updatedContent = updatedContent.replace(regex, ' ' + replacement); // Add space before replacement
       }
 
       document.getElementById('result').innerText = updatedContent;
@@ -136,7 +138,6 @@
       const inputField = document.getElementById(elementId);
 
       if (navigator.clipboard && navigator.clipboard.readText) {
-        // Request clipboard access permission first
         navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
           if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
             navigator.clipboard.readText()
