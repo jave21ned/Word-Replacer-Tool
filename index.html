@@ -38,7 +38,7 @@
       padding: 10px;
       font-size: 16px;
       white-space: pre-wrap;
-      overflow-y: auto;
+      overflow-y: auto; /* Add vertical scrollbar */
     }
     #copyNotification {
       display: none;
@@ -50,8 +50,9 @@
       font-size: 14px;
       text-align: center;
     }
+    /* Add spacing between sections */
     .section {
-      margin-bottom: 30px;
+      margin-bottom: 30px; /* Increased spacing between sections */
     }
   </style>
 </head>
@@ -61,7 +62,7 @@
   <!-- Replacement Section -->
   <div class="section">
     <label for="replacementPairs">Enter replacements:</label>
-    <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan, 你好= Hello">
+    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan, 你好=Hello">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
   </div>
@@ -101,7 +102,7 @@
 
       // Loop through each replacement pair
       for (const [word, replacement] of Object.entries(replacements)) {
-        // Escape special characters in word (e.g., . * ?)
+        // Escape special characters in the word (e.g., . * ?)
         const escapedWord = word.replace(/([.*+?^=!:${}()|\/\)/g, "\\$1");
         // Create a global, case-insensitive regex for the word
         const regex = new RegExp(escapedWord, 'gi'); // 'g' for global, 'i' for case-insensitive
