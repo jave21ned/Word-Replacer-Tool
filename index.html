@@ -50,7 +50,6 @@
       font-size: 14px;
       text-align: center;
     }
-    /* Add spacing between sections */
     .section {
       margin-bottom: 30px;
     }
@@ -89,17 +88,24 @@
   <!-- EPUB Processor Section -->
   <div class="section">
     <h3>EPUB Processor Tool</h3>
-    <input type="file" id="epubFileInput" accept=".epub">
-    <button onclick="processEpub()">Process EPUB</button>
+    <!-- EPUB Replacement Box -->
     <div id="epubReplacementBox">
       <label for="epubReplacements">EPUB Replacements:</label>
       <textarea id="epubReplacements" rows="6" placeholder="_word=Replace full sentence with word, word=Replace just the word"></textarea>
+      <button onclick="pasteEpubReplacements()">Paste</button>
     </div>
+
+    <!-- EPUB Upload and Process -->
+    <input type="file" id="epubFileInput" accept=".epub">
+    <button onclick="processEpub()">Process EPUB</button>
+    <button id="downloadButton" class="hidden" onclick="downloadEpub()">Download Processed EPUB</button>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/epubjs/0.3.88/epub.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script>
-    // Replace words based on replacements
+    let processedEpubBlob;
+
     function replaceWords() {
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
@@ -161,11 +167,10 @@
           }
 
           zip.generateAsync({ type: 'blob' }).then(function (blob) {
-            const editedFileName = file.name.replace(/\.epub$/, '_EDITED.epub');
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = editedFileName;
-            link.click();
+            processedEpubBlob = blob;
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.classList.remove('hidden');
+            downloadButton.disabled = false;
           });
         });
       };
@@ -173,14 +178,38 @@
       reader.readAsArrayBuffer(file);
     }
 
+    function downloadEpub() {
+      const fileInput = document.getElementById('epubFileInput');
+      const fileName = fileInput.files[0].name.replace(/\.epub$/, '_EDITED.epub');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(processedEpubBlob);
+      link.download = fileName;
+      link.click();
+    }
+
+    function pasteEpubReplacements() {
+      pasteIntoField('epubReplacements');
+    }
+
+    function pasteIntoField(elementId) {
+      const inputField = document.getElementById(elementId);
+
+      navigator.clipboard.readText().then(text => {
+        if (text) {
+          inputField.value = text;
+          alert("Content pasted successfully!");
+        } else {
+          alert("Clipboard is empty!");
+        }
+      }).catch(err => {
+        console.error("Paste failed: ", err);
+        alert("Paste failed. Clipboard might be empty.");
+      });
+    }
+
     function escapeRegExp(string) {
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
-
-    function selectAll(elementId) {
-      const element = document.getElementById(elementId);
-      element.select();
-    }
   </script>
 </body>
-</html>
+  </html>
