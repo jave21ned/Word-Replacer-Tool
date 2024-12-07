@@ -100,7 +100,9 @@
 
       let updatedContent = content;
       for (const [word, replacement] of Object.entries(replacements)) {
-        const regex = new RegExp(`\\b${word}\\b`, 'gu'); // Word boundary to match full word only
+        // Escape special regex characters and ensure proper matching of spaces and Chinese characters
+        const escapedWord = word.replace(/([.*+?^=!:${}()|\/\)/g, "\\$1"); // Escape special characters
+        const regex = new RegExp(escapedWord, 'gu'); // Global and Unicode flag
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
