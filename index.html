@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Text & EPUB Replacer Tool</title>
+  <title>Multilingual Text Replacer with EPUB Support</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -50,49 +50,56 @@
       font-size: 14px;
       text-align: center;
     }
+    /* Add spacing between sections */
     .section {
       margin-bottom: 30px;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h2>Text & EPUB Replacer Tool</h2>
+  <h2>Multilingual Text Replacer Tool with EPUB Support</h2>
 
-  <!-- Text Replacement Tool -->
+  <!-- Text Replacer Section -->
   <div class="section">
-    <h3>Text Replacement Tool</h3>
     <label for="replacementPairs">Enter replacements:</label>
     <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan,你好=Hello">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
-    <br>
+  </div>
+
+  <div class="section">
     <label for="contentInput">Enter the content:</label>
     <textarea id="contentInput" rows="6" placeholder="输入需要处理的文本..."></textarea>
     <button onclick="pasteContent()">Paste</button>
     <button onclick="selectAll('contentInput')">Select All</button>
     <button onclick="replaceWords()">Replace Words</button>
-    <h4>Result:</h4>
+  </div>
+
+  <div class="section">
+    <h3>Result:</h3>
     <button onclick="copyResult()">Copy Result</button>
     <button onclick="selectAll('result')">Select All</button>
     <div id="result"></div>
     <div id="copyNotification">Copied to clipboard!</div>
   </div>
 
-  <!-- EPUB Replacement Tool -->
+  <!-- EPUB Processor Section -->
   <div class="section">
-    <h3>EPUB Replacement Tool</h3>
-    <label for="epubReplacementPairs">Enter replacements (prefix _ for sentence replacement):</label>
-    <input id="epubReplacementPairs" placeholder="e.g., 罗南=Luo Nan, _你好=Hello">
-    <button onclick="selectAll('epubReplacementPairs')">Select All</button>
-    <br>
-    <label for="uploadEpub">Upload EPUB file:</label>
-    <input id="uploadEpub" type="file" accept=".epub">
+    <h3>EPUB Processor Tool</h3>
+    <input type="file" id="epubFileInput" accept=".epub">
     <button onclick="processEpub()">Process EPUB</button>
+    <div id="epubReplacementBox">
+      <label for="epubReplacements">EPUB Replacements:</label>
+      <textarea id="epubReplacements" rows="6" placeholder="_word=Replace full sentence with word, word=Replace just the word"></textarea>
+    </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/epubjs/0.3.88/epub.min.js"></script>
   <script>
-    // Text Replacement Tool
+    // Replace words based on replacements
     function replaceWords() {
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
@@ -105,112 +112,74 @@
 
       let updatedContent = content;
       for (const [word, replacement] of Object.entries(replacements)) {
-        const regex = new RegExp(word, 'g');
+        const regex = new RegExp(`\\b${escapeRegExp(word)}\\b`, 'g');
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
       document.getElementById('result').innerText = updatedContent;
     }
 
-    function copyResult() {
-      const resultText = document.getElementById('result').innerText;
-      navigator.clipboard.writeText(resultText).then(() => showNotification("Copied to clipboard!"));
+    function processEpub() {
+      const fileInput = document.getElementById('epubFileInput');
+      const replacements = document.getElementById('epubReplacements').value;
+
+      if (!fileInput.files.length) {
+        alert("Please upload an EPUB file.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function () {
+        const zip = new JSZip();
+        zip.loadAsync(reader.result).then(async function (contents) {
+          const replacementMap = replacements.split(',').reduce((acc, pair) => {
+            const [key, value] = pair.split('=').map(str => str.trim());
+            if (key && value) acc[key] = value;
+            return acc;
+          }, {});
+
+          for (const [filename, fileContent] of Object.entries(contents.files)) {
+            if (filename.endsWith(".xhtml") || filename.endsWith(".html")) {
+              const text = await fileContent.async("text");
+              let processedText = text;
+
+              for (const [key, value] of Object.entries(replacementMap)) {
+                if (key.startsWith('_')) {
+                  const word = key.substring(1);
+                  const sentenceRegex = new RegExp(`[^.!?]*?\\b${escapeRegExp(word)}\\b[^.!?]*[.!?]`, 'g');
+                  processedText = processedText.replace(sentenceRegex, value);
+                } else {
+                  const wordRegex = new RegExp(`\\b${escapeRegExp(key)}\\b`, 'g');
+                  processedText = processedText.replace(wordRegex, value);
+                }
+              }
+
+              zip.file(filename, processedText);
+            }
+          }
+
+          zip.generateAsync({ type: 'blob' }).then(function (blob) {
+            const editedFileName = file.name.replace(/\.epub$/, '_EDITED.epub');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = editedFileName;
+            link.click();
+          });
+        });
+      };
+
+      reader.readAsArrayBuffer(file);
     }
 
-    function pasteReplacement() {
-      pasteIntoField('replacementPairs');
-    }
-
-    function pasteContent() {
-      pasteIntoField('contentInput');
-    }
-
-    function pasteIntoField(elementId) {
-      const inputField = document.getElementById(elementId);
-      navigator.clipboard.readText().then(text => {
-        inputField.value = text;
-      });
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     function selectAll(elementId) {
       const element = document.getElementById(elementId);
-      if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-        element.select();
-      }
-    }
-
-    function showNotification(message) {
-      const notification = document.getElementById('copyNotification');
-      notification.innerText = message;
-      notification.style.display = 'block';
-      setTimeout(() => notification.style.display = 'none', 2000);
-    }
-
-    // EPUB Replacement Tool
-    function parseReplacements(pairsInput) {
-      return pairsInput.split(',').reduce((acc, pair) => {
-        const [key, value] = pair.split('=').map(str => str.trim());
-        if (key && value) acc[key] = value;
-        return acc;
-      }, {});
-    }
-
-    function replaceContentInEpub(content, replacements) {
-      for (const [key, replacement] of Object.entries(replacements)) {
-        if (key.startsWith('_')) {
-          const escapedKey = key.substring(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const sentenceRegex = new RegExp(`[^.!?]*?${escapedKey}[^.!?]*[.!?]`, 'g');
-          content = content.replace(sentenceRegex, replacement);
-        } else {
-          const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const wordRegex = new RegExp(escapedKey, 'g');
-          content = content.replace(wordRegex, replacement);
-        }
-      }
-      return content;
-    }
-
-    async function processEpub() {
-      const fileInput = document.getElementById('uploadEpub');
-      const file = fileInput.files[0];
-      if (!file) {
-        alert("No EPUB file selected!");
-        return;
-      }
-
-      const pairsInput = document.getElementById('epubReplacementPairs').value;
-      const replacements = parseReplacements(pairsInput);
-
-      const reader = new FileReader();
-      reader.onload = async function (event) {
-        const arrayBuffer = event.target.result;
-        const jszip = new JSZip();
-
-        try {
-          const zip = await jszip.loadAsync(arrayBuffer);
-          for (const filename of Object.keys(zip.files)) {
-            if (filename.endsWith('.html') || filename.endsWith('.xhtml')) {
-              const content = await zip.file(filename).async("string");
-              const modifiedContent = replaceContentInEpub(content, replacements);
-              zip.file(filename, modifiedContent);
-            }
-          }
-
-          const modifiedEpub = await zip.generateAsync({ type: 'blob' });
-          const originalName = file.name.replace(/\.epub$/i, '');
-          const editedName = `${originalName}_EDITED.epub`;
-
-          const downloadLink = document.createElement('a');
-          downloadLink.href = URL.createObjectURL(modifiedEpub);
-          downloadLink.download = editedName;
-          downloadLink.textContent = `Download ${editedName}`;
-          document.body.appendChild(downloadLink);
-        } catch (error) {
-          console.error("Error processing EPUB:", error);
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
+      element.select();
     }
   </script>
 </body>
