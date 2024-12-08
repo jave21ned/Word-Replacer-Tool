@@ -121,9 +121,9 @@
       let chunkIndex = 1;
 
       paragraphs.forEach(paragraph => {
-        // Check if adding the paragraph would exceed the chunk size
-        if (currentChunk.length + paragraph.length <= chunkSize) {
-          currentChunk += (currentChunk ? '\n' : '') + paragraph;
+        // Add a paragraph to current chunk if it fits within the limit
+        if (currentChunk.length + paragraph.length + 1 <= chunkSize) { // +1 to account for the newline
+          currentChunk += (currentChunk ? '\n' : '') + paragraph;  // Preserve paragraph spacing
         } else {
           // If the chunk exceeds the size, create a new box
           resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
