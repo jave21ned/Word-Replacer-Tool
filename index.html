@@ -30,7 +30,7 @@
     button:hover {
       background-color: #45a049;
     }
-    #result {
+    .result-box {
       background: #f8f9fa;
       border: 1px solid #ddd;
       min-height: 100px;
@@ -39,6 +39,7 @@
       font-size: 16px;
       white-space: pre-wrap;
       overflow-y: auto;
+      margin-bottom: 10px;
     }
     #copyNotification {
       display: none;
@@ -75,9 +76,7 @@
 
   <div class="section">
     <h3>Result:</h3>
-    <button onclick="copyResult()">Copy Result</button>
-    <button onclick="selectAll('result')">Select All</button>
-    <div id="result"></div>
+    <div id="resultContainer"></div>
     <div id="copyNotification">Copied to clipboard!</div>
   </div>
 
@@ -105,17 +104,38 @@
         updatedContent = updatedContent.replace(regex, ' ' + replacement); // Add space before replacement
       }
 
-      document.getElementById('result').innerText = updatedContent;
+      // Split content into chunks of 900 words
+      const wordArray = updatedContent.split(/\s+/); // Split by spaces
+      const chunkSize = 900;
+      const resultContainer = document.getElementById('resultContainer');
+      resultContainer.innerHTML = ''; // Clear previous results
+
+      for (let i = 0; i < wordArray.length; i += chunkSize) {
+        const chunk = wordArray.slice(i, i + chunkSize).join(' ');
+        const resultBox = createResultBox(chunk, Math.floor(i / chunkSize) + 1);
+        resultContainer.appendChild(resultBox);
+      }
     }
 
-    // Copy result content to clipboard
-    function copyResult() {
-      const resultText = document.getElementById('result').innerText;
-      if (!resultText) {
-        showNotification("Nothing to copy!", true);
-        return;
-      }
-      navigator.clipboard.writeText(resultText)
+    // Create a result box with the corresponding text and copy button
+    function createResultBox(text, boxNumber) {
+      const resultBox = document.createElement('div');
+      resultBox.classList.add('result-box');
+      resultBox.innerText = text;
+
+      const copyButton = document.createElement('button');
+      copyButton.innerText = `Copy ${boxNumber}`;
+      copyButton.onclick = function() {
+        copyToClipboard(text);
+      };
+
+      resultBox.appendChild(copyButton);
+      return resultBox;
+    }
+
+    // Copy text to clipboard
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text)
         .then(() => showNotification("Copied to clipboard!"))
         .catch(err => {
           console.error("Copy failed: ", err);
