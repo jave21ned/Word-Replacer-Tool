@@ -104,14 +104,13 @@
         updatedContent = updatedContent.replace(regex, ' ' + replacement); // Add space before replacement
       }
 
-      // Split content into chunks of 900 words
-      const wordArray = updatedContent.split(/\s+/); // Split by spaces
-      const chunkSize = 900;
+      // Split content into chunks of 5000 characters
+      const chunkSize = 5000;
       const resultContainer = document.getElementById('resultContainer');
       resultContainer.innerHTML = ''; // Clear previous results
 
-      for (let i = 0; i < wordArray.length; i += chunkSize) {
-        const chunk = wordArray.slice(i, i + chunkSize).join(' ');
+      for (let i = 0; i < updatedContent.length; i += chunkSize) {
+        const chunk = updatedContent.slice(i, i + chunkSize);
         const resultBox = createResultBox(chunk, Math.floor(i / chunkSize) + 1);
         resultContainer.appendChild(resultBox);
       }
