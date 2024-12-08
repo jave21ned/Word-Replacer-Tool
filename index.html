@@ -185,9 +185,20 @@
       return resultBox;
     }
 
-    // Copy content to clipboard and preserve paragraph spacing
+    // Copy content to clipboard and preserve paragraph spacing, excluding button labels
     function copyToClipboard(resultBox) {
-      const textToCopy = resultBox.innerText.replace(/\n/g, '\n\n'); // Preserve paragraph breaks with extra newlines
+      const paragraphs = resultBox.querySelectorAll('p');
+      let textToCopy = '';
+      
+      // Collect the text of each paragraph
+      paragraphs.forEach(paragraph => {
+        textToCopy += paragraph.innerText + '\n\n'; // Add extra newlines to separate paragraphs
+      });
+
+      // Trim the final text to avoid unnecessary trailing newlines
+      textToCopy = textToCopy.trim();
+
+      // Copy the final text to clipboard
       navigator.clipboard.writeText(textToCopy)
         .then(() => showNotification("Copied to clipboard!"))
         .catch(err => {
@@ -243,17 +254,11 @@
       const element = document.getElementById(elementId);
       if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
         element.select();
-      } else if (element.tagName === 'DIV') {
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
+        document.execCommand('copy');
       }
-      showNotification("Text selected!");
     }
 
-    // Show a notification message
+    // Show a notification at the bottom of the page
     function showNotification(message, isError = false) {
       const notification = document.getElementById('copyNotification');
       notification.innerText = message;
@@ -261,24 +266,8 @@
       notification.style.display = 'block';
       setTimeout(() => {
         notification.style.display = 'none';
-      }, 3000);
+      }, 2000);
     }
-
-    // Request clipboard permissions on page load
-    function requestClipboardPermissions() {
-      if (navigator.permissions) {
-        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
-          console.log("Clipboard permission status: ", permissionStatus.state);
-        }).catch(err => {
-          console.error("Failed to request clipboard permissions: ", err);
-        });
-      } else {
-        console.warn("Clipboard permissions API not supported in this browser.");
-      }
-    }
-
-    // Request permissions on load
-    window.onload = requestClipboardPermissions;
   </script>
 </body>
 </html>
