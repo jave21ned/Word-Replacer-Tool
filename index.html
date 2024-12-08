@@ -153,7 +153,7 @@
       const copyTopButton = document.createElement('button');
       copyTopButton.innerText = `Copy ${boxNumber}`;
       copyTopButton.onclick = function() {
-        copyToClipboard(text);
+        copyToClipboard(resultBox);  // Pass the resultBox for copying
       };
       
       copyBtnContainer.appendChild(copyTopButton);
@@ -178,16 +178,17 @@
       const copyBottomButton = document.createElement('button');
       copyBottomButton.innerText = `Copy ${boxNumber}`;
       copyBottomButton.onclick = function() {
-        copyToClipboard(text);
+        copyToClipboard(resultBox);  // Pass the resultBox for copying
       };
       resultBox.appendChild(copyBottomButton);
 
       return resultBox;
     }
 
-    // Copy text to clipboard
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text)
+    // Copy content to clipboard and preserve paragraph spacing
+    function copyToClipboard(resultBox) {
+      const textToCopy = resultBox.innerText.replace(/\n/g, '\n\n'); // Preserve paragraph breaks with extra newlines
+      navigator.clipboard.writeText(textToCopy)
         .then(() => showNotification("Copied to clipboard!"))
         .catch(err => {
           console.error("Copy failed: ", err);
