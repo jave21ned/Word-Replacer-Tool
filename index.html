@@ -109,15 +109,32 @@
         updatedContent = updatedContent.replace(regex, ' ' + replacement); // Add space before replacement
       }
 
-      // Split content into chunks of 4400 characters (updated chunk size)
+      // Split content into chunks of 4400 characters or less without breaking paragraphs
       const chunkSize = 4400;
       const resultContainer = document.getElementById('resultContainer');
       resultContainer.innerHTML = ''; // Clear previous results
 
-      for (let i = 0; i < updatedContent.length; i += chunkSize) {
-        const chunk = updatedContent.slice(i, i + chunkSize);
-        const resultBox = createResultBox(chunk, Math.floor(i / chunkSize) + 1);
-        resultContainer.appendChild(resultBox);
+      // Split content into paragraphs to avoid splitting mid-sentence
+      const paragraphs = updatedContent.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+
+      let currentChunk = '';
+      let chunkIndex = 1;
+
+      paragraphs.forEach(paragraph => {
+        // Check if adding the paragraph would exceed the chunk size
+        if (currentChunk.length + paragraph.length <= chunkSize) {
+          currentChunk += (currentChunk ? '\n' : '') + paragraph;
+        } else {
+          // If the chunk exceeds the size, create a new box
+          resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
+          chunkIndex++;
+          currentChunk = paragraph; // Start a new chunk with the current paragraph
+        }
+      });
+
+      // Append the last chunk if any
+      if (currentChunk) {
+        resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
       }
     }
 
