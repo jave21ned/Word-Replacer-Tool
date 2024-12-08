@@ -41,6 +41,9 @@
       margin-bottom: 10px;
       position: relative;
     }
+    .result-box p {
+      margin-bottom: 15px; /* Add space between paragraphs */
+    }
     .copy-btn-container {
       display: flex;
       justify-content: space-between;
@@ -160,7 +163,15 @@
 
       // Add the content to the result box
       const content = document.createElement('div');
-      content.innerText = text;
+      
+      // Split the content into paragraphs and add <p> tags
+      const paragraphs = text.split('\n');
+      paragraphs.forEach(paragraph => {
+        const para = document.createElement('p');
+        para.innerText = paragraph;
+        content.appendChild(para);
+      });
+
       resultBox.appendChild(content);
 
       // Add another copy button at the bottom
