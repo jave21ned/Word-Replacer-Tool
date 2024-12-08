@@ -22,7 +22,6 @@
       color: white;
       border: none;
       cursor: pointer;
-      margin-left: 10px;
       padding: 10px;
       font-size: 14px;
       display: inline-block;
@@ -39,6 +38,12 @@
       font-size: 16px;
       white-space: pre-wrap;
       overflow-y: auto;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .copy-btn-container {
+      display: flex;
+      justify-content: space-between;
       margin-bottom: 10px;
     }
     #copyNotification {
@@ -120,15 +125,35 @@
     function createResultBox(text, boxNumber) {
       const resultBox = document.createElement('div');
       resultBox.classList.add('result-box');
-      resultBox.innerText = text;
 
-      const copyButton = document.createElement('button');
-      copyButton.innerText = `Copy ${boxNumber}`;
-      copyButton.onclick = function() {
+      // Create copy button container
+      const copyBtnContainer = document.createElement('div');
+      copyBtnContainer.classList.add('copy-btn-container');
+      
+      const copyTopButton = document.createElement('button');
+      copyTopButton.innerText = `Copy ${boxNumber}`;
+      copyTopButton.onclick = function() {
         copyToClipboard(text);
       };
+      
+      copyBtnContainer.appendChild(copyTopButton);
 
-      resultBox.appendChild(copyButton);
+      // Add the copy button container to the top of the result box
+      resultBox.appendChild(copyBtnContainer);
+
+      // Add the content to the result box
+      const content = document.createElement('div');
+      content.innerText = text;
+      resultBox.appendChild(content);
+
+      // Add another copy button at the bottom
+      const copyBottomButton = document.createElement('button');
+      copyBottomButton.innerText = `Copy ${boxNumber}`;
+      copyBottomButton.onclick = function() {
+        copyToClipboard(text);
+      };
+      resultBox.appendChild(copyBottomButton);
+
       return resultBox;
     }
 
