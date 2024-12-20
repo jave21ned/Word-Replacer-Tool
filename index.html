@@ -39,15 +39,11 @@
       white-space: pre-wrap;
       overflow-y: auto;
       margin-bottom: 10px;
-      position: relative;
-      display: block; /* Ensure it's visible by default */
     }
     .result-box p {
-      margin-bottom: 15px; /* Add space between paragraphs */
+      margin-bottom: 15px;
     }
     .copy-btn-container {
-      display: flex;
-      justify-content: space-between;
       margin-bottom: 10px;
     }
     #copyNotification {
@@ -90,12 +86,10 @@
   </div>
 
   <script>
-    // Helper function to escape special characters for use in a regular expression
     function replaceSpecialCharacters(str) {
       return str.replace(/[.*+?^=!:${}()|\/]/g, '\\$&');
     }
 
-    // Replace words based on replacements
     function replaceWords() {
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
@@ -110,110 +104,80 @@
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
         const regex = new RegExp(escapedWord, 'gu');
-        updatedContent = updatedContent.replace(regex, ' ' + replacement); // Add space before replacement
+        updatedContent = updatedContent.replace(regex, ' ' + replacement);
       }
 
-      // Split content into chunks of 3000 characters or less without breaking paragraphs
       const chunkSize = 3000;
       const resultContainer = document.getElementById('resultContainer');
-      resultContainer.innerHTML = ''; // Clear previous results
+      resultContainer.innerHTML = '';
 
-      // Split content into paragraphs to avoid splitting mid-sentence
       const paragraphs = updatedContent.split('\n').map(p => p.trim()).filter(p => p.length > 0);
 
       let currentChunk = '';
       let chunkIndex = 1;
 
       paragraphs.forEach(paragraph => {
-        // Add a paragraph to current chunk if it fits within the limit
-        if (currentChunk.length + paragraph.length + 1 <= chunkSize) { // +1 to account for the newline
-          currentChunk += (currentChunk ? '\n' : '') + paragraph;  // Preserve paragraph spacing
+        if (currentChunk.length + paragraph.length + 1 <= chunkSize) {
+          currentChunk += (currentChunk ? '\n' : '') + paragraph;
         } else {
-          // If the chunk exceeds the size, create a new box
           resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
           chunkIndex++;
-          currentChunk = paragraph; // Start a new chunk with the current paragraph
+          currentChunk = paragraph;
         }
       });
 
-      // Append the last chunk if any
       if (currentChunk) {
         resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
       }
     }
 
-    // Create a result box with the corresponding text and copy button
     function createResultBox(text, boxNumber) {
+      const container = document.createElement('div');
+      container.style.position = 'relative';
+
       const resultBox = document.createElement('div');
       resultBox.classList.add('result-box');
-      
-      // Create toggle button to show/hide the result box
-      const toggleButton = document.createElement('button');
-      toggleButton.innerText = 'Toggle';
-      toggleButton.onclick = function() {
-        if (resultBox.style.display === 'none') {
-          resultBox.style.display = 'block'; // Show the box
-        } else {
-          resultBox.style.display = 'none'; // Hide the box
-        }
+
+      const copyButton = document.createElement('button');
+      copyButton.innerText = `Copy ${boxNumber}`;
+      copyButton.onclick = function () {
+        copyToClipboard(resultBox);
+        resultBox.style.display = 'none';
+        arrowDownButton.style.display = 'inline-block';
       };
-      resultBox.appendChild(toggleButton);
 
-      // Create copy button container
-      const copyBtnContainer = document.createElement('div');
-      copyBtnContainer.classList.add('copy-btn-container');
-      
-      const copyTopButton = document.createElement('button');
-      copyTopButton.innerText = `Copy ${boxNumber}`;
-      copyTopButton.onclick = function() {
-        copyToClipboard(resultBox);  // Pass the resultBox for copying
-        resultBox.style.display = 'none';  // Minimize the result box after copying
-      };
-      
-      copyBtnContainer.appendChild(copyTopButton);
-
-      // Add the copy button container to the top of the result box
-      resultBox.appendChild(copyBtnContainer);
-
-      // Add the content to the result box
       const content = document.createElement('div');
-      
-      // Split the content into paragraphs and add <p> tags
       const paragraphs = text.split('\n');
       paragraphs.forEach(paragraph => {
         const para = document.createElement('p');
         para.innerText = paragraph;
         content.appendChild(para);
       });
-
       resultBox.appendChild(content);
 
-      // Add another copy button at the bottom
-      const copyBottomButton = document.createElement('button');
-      copyBottomButton.innerText = `Copy ${boxNumber}`;
-      copyBottomButton.onclick = function() {
-        copyToClipboard(resultBox);  // Pass the resultBox for copying
-        resultBox.style.display = 'none';  // Minimize the result box after copying
+      const arrowDownButton = document.createElement('button');
+      arrowDownButton.innerHTML = '&#9660;';
+      arrowDownButton.style.display = 'none';
+      arrowDownButton.onclick = function () {
+        resultBox.style.display = 'block';
+        arrowDownButton.style.display = 'none';
       };
-      resultBox.appendChild(copyBottomButton);
 
-      return resultBox;
+      container.appendChild(copyButton);
+      container.appendChild(resultBox);
+      container.appendChild(arrowDownButton);
+
+      return container;
     }
 
-    // Copy content to clipboard and preserve paragraph spacing, excluding button labels
     function copyToClipboard(resultBox) {
       const paragraphs = resultBox.querySelectorAll('p');
       let textToCopy = '';
-      
-      // Collect the text of each paragraph
       paragraphs.forEach(paragraph => {
-        textToCopy += paragraph.innerText + '\n\n'; // Add extra newlines to separate paragraphs
+        textToCopy += paragraph.innerText + '\n\n';
       });
-
-      // Trim the final text to avoid unnecessary trailing newlines
       textToCopy = textToCopy.trim();
 
-      // Copy the final text to clipboard
       navigator.clipboard.writeText(textToCopy)
         .then(() => showNotification("Copied to clipboard!"))
         .catch(err => {
@@ -222,17 +186,14 @@
         });
     }
 
-    // Paste content into the content input
     function pasteContent() {
       pasteIntoField('contentInput');
     }
 
-    // Paste content into the replacement pairs input
     function pasteReplacement() {
       pasteIntoField('replacementPairs');
     }
 
-    // Generic paste function with clipboard permissions
     function pasteIntoField(elementId) {
       const inputField = document.getElementById(elementId);
 
@@ -264,7 +225,6 @@
       }
     }
 
-    // Select all text in an input or output field
     function selectAll(elementId) {
       const element = document.getElementById(elementId);
       if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
@@ -273,7 +233,6 @@
       }
     }
 
-    // Show a notification at the bottom of the page
     function showNotification(message, isError = false) {
       const notification = document.getElementById('copyNotification');
       notification.innerText = message;
