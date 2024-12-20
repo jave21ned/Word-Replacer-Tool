@@ -40,6 +40,7 @@
       overflow-y: auto;
       margin-bottom: 10px;
       position: relative;
+      display: block; /* Ensure it's visible by default */
     }
     .result-box p {
       margin-bottom: 15px; /* Add space between paragraphs */
@@ -145,6 +146,18 @@
     function createResultBox(text, boxNumber) {
       const resultBox = document.createElement('div');
       resultBox.classList.add('result-box');
+      
+      // Create toggle button to show/hide the result box
+      const toggleButton = document.createElement('button');
+      toggleButton.innerText = 'Toggle';
+      toggleButton.onclick = function() {
+        if (resultBox.style.display === 'none') {
+          resultBox.style.display = 'block'; // Show the box
+        } else {
+          resultBox.style.display = 'none'; // Hide the box
+        }
+      };
+      resultBox.appendChild(toggleButton);
 
       // Create copy button container
       const copyBtnContainer = document.createElement('div');
@@ -154,6 +167,7 @@
       copyTopButton.innerText = `Copy ${boxNumber}`;
       copyTopButton.onclick = function() {
         copyToClipboard(resultBox);  // Pass the resultBox for copying
+        resultBox.style.display = 'none';  // Minimize the result box after copying
       };
       
       copyBtnContainer.appendChild(copyTopButton);
@@ -179,6 +193,7 @@
       copyBottomButton.innerText = `Copy ${boxNumber}`;
       copyBottomButton.onclick = function() {
         copyToClipboard(resultBox);  // Pass the resultBox for copying
+        resultBox.style.display = 'none';  // Minimize the result box after copying
       };
       resultBox.appendChild(copyBottomButton);
 
