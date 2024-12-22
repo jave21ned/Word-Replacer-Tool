@@ -94,18 +94,34 @@
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
 
+      // Temporarily replace specific notes with unique placeholders
+      const maleNote = '(note: this is a male person)';
+      const femaleNote = '(note: this is a female person)';
+      
+      const maleNotePlaceholder = 'MALE_NOTE_PLACEHOLDER';
+      const femaleNotePlaceholder = 'FEMALE_NOTE_PLACEHOLDER';
+
+      let updatedContent = content;
+      updatedContent = updatedContent.replace(new RegExp(maleNote, 'g'), maleNotePlaceholder);
+      updatedContent = updatedContent.replace(new RegExp(femaleNote, 'g'), femaleNotePlaceholder);
+
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
         const [key, value] = pair.split('=').map(str => str.trim());
         if (key && value) acc[key] = value;
         return acc;
       }, {});
 
-      let updatedContent = content;
+      // Apply replacements to the content
+      updatedContent = updatedContent;
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
         const regex = new RegExp(escapedWord, 'gu');
         updatedContent = updatedContent.replace(regex, ' ' + replacement);
       }
+
+      // Restore the placeholders back to the original notes
+      updatedContent = updatedContent.replace(new RegExp(maleNotePlaceholder, 'g'), maleNote);
+      updatedContent = updatedContent.replace(new RegExp(femaleNotePlaceholder, 'g'), femaleNote);
 
       const chunkSize = 3000;
       const resultContainer = document.getElementById('resultContainer');
