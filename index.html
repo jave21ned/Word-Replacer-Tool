@@ -116,7 +116,7 @@
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
         const regex = new RegExp(escapedWord, 'gu');
-        updatedContent = updatedContent.replace(regex, ' ' + replacement);
+        updatedContent = updatedContent.replace(regex, replacement + ' '); // Add space after the replacement
       }
 
       // Restore the placeholders back to the original notes
