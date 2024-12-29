@@ -95,17 +95,16 @@
       const content = document.getElementById('contentInput').value;
 
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
-        const [key, value] = pair.split('=').map(str => str); // Keep spaces intact
-        if (key && value) acc[key] = value;
+        const [key, value] = pair.split('=');
+        if (key && value) acc[key.trim()] = value; // Keep spaces in value
         return acc;
       }, {});
 
       let updatedContent = content;
 
-      // Apply replacements exactly as defined
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
-        const regex = new RegExp(escapedWord, 'gu'); // Match word globally
+        const regex = new RegExp(escapedWord, 'gu');
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
@@ -200,15 +199,28 @@
       const inputField = document.getElementById(elementId);
 
       if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.clipboard.readText()
-          .then(text => {
-            inputField.value = text;
-            showNotification("Content pasted successfully!");
-          })
-          .catch(err => {
-            console.error("Paste failed: ", err);
-            showNotification("Paste failed. Clipboard might be empty.", true);
-          });
+        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
+          if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+            navigator.clipboard.readText()
+              .then(text => {
+                if (text) {
+                  inputField.value = text;
+                  showNotification("Content pasted successfully!");
+                } else {
+                  showNotification("Clipboard is empty!", true);
+                }
+              })
+              .catch(err => {
+                console.error("Paste failed (modern): ", err);
+                showNotification("Paste failed. Clipboard might be empty.", true);
+              });
+          } else {
+            showNotification("Clipboard access denied!", true);
+          }
+        }).catch(err => {
+          console.error("Clipboard permission check failed: ", err);
+          showNotification("Permission error. Paste not allowed.", true);
+        });
       } else {
         showNotification("Paste not supported in this browser.", true);
       }
