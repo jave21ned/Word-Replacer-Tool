@@ -92,7 +92,7 @@
       const content = document.getElementById('contentInput').value;
 
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
-        const [key, value] = pair.split('=').map(str => str.trim());
+        const [key, value] = pair.split('=').map(str => str); // Keep spaces intact
         if (key && value) acc[key] = value;
         return acc;
       }, {});
@@ -102,7 +102,7 @@
       // Apply replacements exactly as defined
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
-        const regex = new RegExp(escapedWord, 'gu');
+        const regex = new RegExp(`\\b${escapedWord}\\b`, 'gu'); // Match whole words with boundaries
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
