@@ -43,9 +43,6 @@
     .result-box p {
       margin-bottom: 15px;
     }
-    .copy-btn-container {
-      margin-bottom: 10px;
-    }
     #copyNotification {
       display: none;
       color: #fff;
@@ -66,7 +63,7 @@
 
   <div class="section">
     <label for="replacementPairs">Enter replacements:</label>
-    <input id="replacementPairs" placeholder="e.g., 罗南=Luo Nan, 你好=Hello">
+    <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan , 你好= Hello ">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
   </div>
@@ -94,112 +91,23 @@
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
 
-      // Temporarily replace specific notes with unique placeholders
-      const maleNote = '(note: this is a male person)';
-      const femaleNote = '(note: this is a female person)';
-      
-      const maleNotePlaceholder = 'MALE_NOTE_PLACEHOLDER';
-      const femaleNotePlaceholder = 'FEMALE_NOTE_PLACEHOLDER';
-
-      let updatedContent = content;
-      updatedContent = updatedContent.replace(new RegExp(maleNote, 'g'), maleNotePlaceholder);
-      updatedContent = updatedContent.replace(new RegExp(femaleNote, 'g'), femaleNotePlaceholder);
-
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
         const [key, value] = pair.split('=').map(str => str.trim());
         if (key && value) acc[key] = value;
         return acc;
       }, {});
 
-      // Apply replacements to the content
-      updatedContent = updatedContent;
+      let updatedContent = content;
+
+      // Apply replacements exactly as defined
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
         const regex = new RegExp(escapedWord, 'gu');
-        updatedContent = updatedContent.replace(regex, replacement + ' '); // Add space after the replacement
+        updatedContent = updatedContent.replace(regex, replacement);
       }
 
-      // Restore the placeholders back to the original notes
-      updatedContent = updatedContent.replace(new RegExp(maleNotePlaceholder, 'g'), maleNote);
-      updatedContent = updatedContent.replace(new RegExp(femaleNotePlaceholder, 'g'), femaleNote);
-
-      const chunkSize = 3000;
       const resultContainer = document.getElementById('resultContainer');
-      resultContainer.innerHTML = '';
-
-      const paragraphs = updatedContent.split('\n').map(p => p.trim()).filter(p => p.length > 0);
-
-      let currentChunk = '';
-      let chunkIndex = 1;
-
-      paragraphs.forEach(paragraph => {
-        if (currentChunk.length + paragraph.length + 1 <= chunkSize) {
-          currentChunk += (currentChunk ? '\n' : '') + paragraph;
-        } else {
-          resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
-          chunkIndex++;
-          currentChunk = paragraph;
-        }
-      });
-
-      if (currentChunk) {
-        resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
-      }
-    }
-
-    function createResultBox(text, boxNumber) {
-      const container = document.createElement('div');
-      container.style.position = 'relative';
-
-      const resultBox = document.createElement('div');
-      resultBox.classList.add('result-box');
-
-      const copyButton = document.createElement('button');
-      copyButton.innerText = `Copy ${boxNumber}`;
-      copyButton.onclick = function () {
-        copyToClipboard(resultBox);
-        resultBox.style.display = 'none';
-        arrowDownButton.style.display = 'inline-block';
-      };
-
-      const content = document.createElement('div');
-      const paragraphs = text.split('\n');
-      paragraphs.forEach(paragraph => {
-        const para = document.createElement('p');
-        para.innerText = paragraph;
-        content.appendChild(para);
-      });
-      resultBox.appendChild(content);
-
-      const arrowDownButton = document.createElement('button');
-      arrowDownButton.innerHTML = '&#9660;';
-      arrowDownButton.style.display = 'none';
-      arrowDownButton.onclick = function () {
-        resultBox.style.display = 'block';
-        arrowDownButton.style.display = 'none';
-      };
-
-      container.appendChild(copyButton);
-      container.appendChild(resultBox);
-      container.appendChild(arrowDownButton);
-
-      return container;
-    }
-
-    function copyToClipboard(resultBox) {
-      const paragraphs = resultBox.querySelectorAll('p');
-      let textToCopy = '';
-      paragraphs.forEach(paragraph => {
-        textToCopy += paragraph.innerText + '\n\n';
-      });
-      textToCopy = textToCopy.trim();
-
-      navigator.clipboard.writeText(textToCopy)
-        .then(() => showNotification("Copied to clipboard!"))
-        .catch(err => {
-          console.error("Copy failed: ", err);
-          showNotification("Failed to copy. Try again!", true);
-        });
+      resultContainer.innerHTML = `<div class="result-box">${updatedContent}</div>`;
     }
 
     function pasteContent() {
@@ -214,28 +122,15 @@
       const inputField = document.getElementById(elementId);
 
       if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
-          if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
-            navigator.clipboard.readText()
-              .then(text => {
-                if (text) {
-                  inputField.value = text;
-                  showNotification("Content pasted successfully!");
-                } else {
-                  showNotification("Clipboard is empty!", true);
-                }
-              })
-              .catch(err => {
-                console.error("Paste failed (modern): ", err);
-                showNotification("Paste failed. Clipboard might be empty.", true);
-              });
-          } else {
-            showNotification("Clipboard access denied!", true);
-          }
-        }).catch(err => {
-          console.error("Clipboard permission check failed: ", err);
-          showNotification("Permission error. Paste not allowed.", true);
-        });
+        navigator.clipboard.readText()
+          .then(text => {
+            inputField.value = text;
+            showNotification("Content pasted successfully!");
+          })
+          .catch(err => {
+            console.error("Paste failed: ", err);
+            showNotification("Paste failed. Clipboard might be empty.", true);
+          });
       } else {
         showNotification("Paste not supported in this browser.", true);
       }
@@ -245,7 +140,6 @@
       const element = document.getElementById(elementId);
       if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
         element.select();
-        document.execCommand('copy');
       }
     }
 
