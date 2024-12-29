@@ -43,6 +43,9 @@
     .result-box p {
       margin-bottom: 15px;
     }
+    .copy-btn-container {
+      margin-bottom: 10px;
+    }
     #copyNotification {
       display: none;
       color: #fff;
@@ -102,12 +105,87 @@
       // Apply replacements exactly as defined
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
-        const regex = new RegExp(`\\b${escapedWord}\\b`, 'gu'); // Match whole words with boundaries
+        const regex = new RegExp(escapedWord, 'gu'); // Match word globally
         updatedContent = updatedContent.replace(regex, replacement);
       }
 
+      const chunkSize = 3000;
       const resultContainer = document.getElementById('resultContainer');
-      resultContainer.innerHTML = `<div class="result-box">${updatedContent}</div>`;
+      resultContainer.innerHTML = '';
+
+      const paragraphs = updatedContent.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+
+      let currentChunk = '';
+      let chunkIndex = 1;
+
+      paragraphs.forEach(paragraph => {
+        if (currentChunk.length + paragraph.length + 1 <= chunkSize) {
+          currentChunk += (currentChunk ? '\n' : '') + paragraph;
+        } else {
+          resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
+          chunkIndex++;
+          currentChunk = paragraph;
+        }
+      });
+
+      if (currentChunk) {
+        resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
+      }
+    }
+
+    function createResultBox(text, boxNumber) {
+      const container = document.createElement('div');
+      container.style.position = 'relative';
+
+      const resultBox = document.createElement('div');
+      resultBox.classList.add('result-box');
+
+      const copyButton = document.createElement('button');
+      copyButton.innerText = `Copy ${boxNumber}`;
+      copyButton.onclick = function () {
+        copyToClipboard(resultBox);
+        resultBox.style.display = 'none';
+        arrowDownButton.style.display = 'inline-block';
+      };
+
+      const content = document.createElement('div');
+      const paragraphs = text.split('\n');
+      paragraphs.forEach(paragraph => {
+        const para = document.createElement('p');
+        para.innerText = paragraph;
+        content.appendChild(para);
+      });
+      resultBox.appendChild(content);
+
+      const arrowDownButton = document.createElement('button');
+      arrowDownButton.innerHTML = '&#9660;';
+      arrowDownButton.style.display = 'none';
+      arrowDownButton.onclick = function () {
+        resultBox.style.display = 'block';
+        arrowDownButton.style.display = 'none';
+      };
+
+      container.appendChild(copyButton);
+      container.appendChild(resultBox);
+      container.appendChild(arrowDownButton);
+
+      return container;
+    }
+
+    function copyToClipboard(resultBox) {
+      const paragraphs = resultBox.querySelectorAll('p');
+      let textToCopy = '';
+      paragraphs.forEach(paragraph => {
+        textToCopy += paragraph.innerText + '\n\n';
+      });
+      textToCopy = textToCopy.trim();
+
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => showNotification("Copied to clipboard!"))
+        .catch(err => {
+          console.error("Copy failed: ", err);
+          showNotification("Failed to copy. Try again!", true);
+        });
     }
 
     function pasteContent() {
