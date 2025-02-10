@@ -115,15 +115,21 @@
       const paragraphs = updatedContent.split('\n').map(p => p.trim()).filter(p => p.length > 0);
 
       let currentChunk = '';
+      let currentChunkVisibleLength = 0;
       let chunkIndex = 1;
 
       paragraphs.forEach(paragraph => {
-        if (currentChunk.length + paragraph.length + 1 <= chunkSize) {
+        const paragraphWithoutParentheses = paragraph.replace(/.*?/g, '');
+        const visibleLength = paragraphWithoutParentheses.length;
+
+        if (currentChunkVisibleLength + visibleLength + 1 <= chunkSize) {
           currentChunk += (currentChunk ? '\n' : '') + paragraph;
+          currentChunkVisibleLength += visibleLength + 1;
         } else {
           resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
           chunkIndex++;
           currentChunk = paragraph;
+          currentChunkVisibleLength = visibleLength;
         }
       });
 
