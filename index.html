@@ -40,9 +40,6 @@
       overflow-y: auto;
       margin-bottom: 10px;
     }
-    .result-box p {
-      margin-bottom: 15px;
-    }
     .copy-btn-container {
       margin-bottom: 10px;
     }
@@ -96,27 +93,21 @@
 
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
         const [key, value] = pair.split('=');
-        if (key && value) acc[key.trim()] = value; // Keep spaces in value
+        if (key && value) acc[key.trim()] = value;
         return acc;
       }, {});
-
-      let updatedContent = content;
-
-      for (const [word, replacement] of Object.entries(replacements)) {
-        const escapedWord = replaceSpecialCharacters(word);
-        const regex = new RegExp(escapedWord, 'gu');
-        updatedContent = updatedContent.replace(regex, replacement);
-      }
 
       const chunkSize = 3000;
       const resultContainer = document.getElementById('resultContainer');
       resultContainer.innerHTML = '';
 
-      const paragraphs = updatedContent.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+      const paragraphs = content.split('\n').map(p => p.trim()).filter(p => p.length > 0);
 
       let currentChunk = '';
       let currentChunkVisibleLength = 0;
       let chunkIndex = 1;
+
+      let chunkList = [];
 
       paragraphs.forEach(paragraph => {
         const paragraphWithoutParentheses = paragraph.replace(/.*?/g, '');
@@ -126,16 +117,25 @@
           currentChunk += (currentChunk ? '\n' : '') + paragraph;
           currentChunkVisibleLength += visibleLength + 1;
         } else {
-          resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
-          chunkIndex++;
+          chunkList.push(currentChunk);
           currentChunk = paragraph;
           currentChunkVisibleLength = visibleLength;
         }
       });
 
       if (currentChunk) {
-        resultContainer.appendChild(createResultBox(currentChunk, chunkIndex));
+        chunkList.push(currentChunk);
       }
+
+      chunkList.forEach((chunk, index) => {
+        let replacedChunk = chunk;
+        for (const [word, replacement] of Object.entries(replacements)) {
+          const escapedWord = replaceSpecialCharacters(word);
+          const regex = new RegExp(escapedWord, 'gu');
+          replacedChunk = replacedChunk.replace(regex, replacement);
+        }
+        resultContainer.appendChild(createResultBox(replacedChunk, index + 1));
+      });
     }
 
     function createResultBox(text, boxNumber) {
@@ -205,28 +205,19 @@
       const inputField = document.getElementById(elementId);
 
       if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
-          if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
-            navigator.clipboard.readText()
-              .then(text => {
-                if (text) {
-                  inputField.value = text;
-                  showNotification("Content pasted successfully!");
-                } else {
-                  showNotification("Clipboard is empty!", true);
-                }
-              })
-              .catch(err => {
-                console.error("Paste failed (modern): ", err);
-                showNotification("Paste failed. Clipboard might be empty.", true);
-              });
-          } else {
-            showNotification("Clipboard access denied!", true);
-          }
-        }).catch(err => {
-          console.error("Clipboard permission check failed: ", err);
-          showNotification("Permission error. Paste not allowed.", true);
-        });
+        navigator.clipboard.readText()
+          .then(text => {
+            if (text) {
+              inputField.value = text;
+              showNotification("Content pasted successfully!");
+            } else {
+              showNotification("Clipboard is empty!", true);
+            }
+          })
+          .catch(err => {
+            console.error("Paste failed: ", err);
+            showNotification("Paste failed. Clipboard might be empty.", true);
+          });
       } else {
         showNotification("Paste not supported in this browser.", true);
       }
