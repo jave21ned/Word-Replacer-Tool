@@ -97,7 +97,7 @@
         return acc;
       }, {});
 
-      const chunkSize = 2500;
+      const chunkSize = 2400;  // Updated character limit
       const resultContainer = document.getElementById('resultContainer');
       resultContainer.innerHTML = '';
 
@@ -105,8 +105,6 @@
 
       let currentChunk = '';
       let currentChunkVisibleLength = 0;
-      let chunkIndex = 1;
-
       let chunkList = [];
 
       paragraphs.forEach(paragraph => {
@@ -205,19 +203,25 @@
       const inputField = document.getElementById(elementId);
 
       if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.clipboard.readText()
-          .then(text => {
-            if (text) {
-              inputField.value = text;
-              showNotification("Content pasted successfully!");
-            } else {
-              showNotification("Clipboard is empty!", true);
-            }
-          })
-          .catch(err => {
-            console.error("Paste failed: ", err);
-            showNotification("Paste failed. Clipboard might be empty.", true);
-          });
+        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
+          if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+            navigator.clipboard.readText()
+              .then(text => {
+                if (text) {
+                  inputField.value = text;
+                  showNotification("Content pasted successfully!");
+                } else {
+                  showNotification("Clipboard is empty!", true);
+                }
+              })
+              .catch(err => {
+                console.error("Paste failed: ", err);
+                showNotification("Paste failed. Clipboard might be empty.", true);
+              });
+          } else {
+            showNotification("Clipboard access denied!", true);
+          }
+        });
       } else {
         showNotification("Paste not supported in this browser.", true);
       }
