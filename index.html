@@ -97,11 +97,20 @@
         return acc;
       }, {});
 
-      const chunkSize = 2400;  // Updated character limit
+      // Step 1: Replace words first
+      let replacedContent = content;
+      for (const [word, replacement] of Object.entries(replacements)) {
+        const escapedWord = replaceSpecialCharacters(word);
+        const regex = new RegExp(escapedWord, 'gu');
+        replacedContent = replacedContent.replace(regex, replacement);
+      }
+
+      // Step 2: Apply 3500 character limit AFTER replacement, excluding parentheses content
+      const chunkSize = 3500;  
       const resultContainer = document.getElementById('resultContainer');
       resultContainer.innerHTML = '';
 
-      const paragraphs = content.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+      const paragraphs = replacedContent.split('\n').map(p => p.trim()).filter(p => p.length > 0);
 
       let currentChunk = '';
       let currentChunkVisibleLength = 0;
@@ -126,13 +135,7 @@
       }
 
       chunkList.forEach((chunk, index) => {
-        let replacedChunk = chunk;
-        for (const [word, replacement] of Object.entries(replacements)) {
-          const escapedWord = replaceSpecialCharacters(word);
-          const regex = new RegExp(escapedWord, 'gu');
-          replacedChunk = replacedChunk.replace(regex, replacement);
-        }
-        resultContainer.appendChild(createResultBox(replacedChunk, index + 1));
+        resultContainer.appendChild(createResultBox(chunk, index + 1));
       });
     }
 
