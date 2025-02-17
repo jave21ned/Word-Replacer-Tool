@@ -71,6 +71,9 @@
     .section {
       margin-bottom: 30px;
     }
+    .replace-button {
+      margin-bottom: 20px; /* Adds more space between Replace Words and Copy buttons */
+    }
   </style>
 </head>
 <body>
@@ -97,7 +100,7 @@
 
   <div class="section green-section">
     <h3>Result:</h3>
-    <button onclick="replaceWords()">Replace Words</button>
+    <button class="replace-button" onclick="replaceWords()">Replace Words</button>
     <div id="resultContainer"></div>
     <div id="copyNotification">Copied to clipboard!</div>
   </div>
