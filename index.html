@@ -29,9 +29,24 @@
     button:hover {
       background-color: #45a049;
     }
+    .blue-section {
+      background-color: #cce5ff;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .yellow-section {
+      background-color: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .green-section {
+      background-color: #d4edda;
+      padding: 15px;
+      border-radius: 8px;
+    }
     .result-box {
-      background: #f8f9fa;
-      border: 1px solid #ddd;
+      background: #b2dfdb;
+      border: 1px solid #157347;
       min-height: 100px;
       max-height: 200px;
       padding: 10px;
@@ -61,23 +76,28 @@
 <body>
   <h2>Multilingual Text Replacer Tool</h2>
 
-  <div class="section">
+  <div class="section blue-section">
     <label for="replacementPairs">Enter replacements:</label>
     <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan , 你好= Hello ">
     <button onclick="pasteReplacement()">Paste</button>
     <button onclick="selectAll('replacementPairs')">Select All</button>
   </div>
 
-  <div class="section">
+  <div class="section yellow-section">
     <label for="contentInput">Enter the content:</label>
     <textarea id="contentInput" rows="6" placeholder="输入需要处理的文本..."></textarea>
     <button onclick="pasteContent()">Paste</button>
     <button onclick="selectAll('contentInput')">Select All</button>
-    <button onclick="replaceWords()">Replace Words</button>
   </div>
 
   <div class="section">
+    <label for="charLimit">Set Character Limit (Excluding Parentheses Content):</label>
+    <input type="number" id="charLimit" placeholder="Enter character limit" value="3500" min="500">
+  </div>
+
+  <div class="section green-section">
     <h3>Result:</h3>
+    <button onclick="replaceWords()">Replace Words</button>
     <div id="resultContainer"></div>
     <div id="copyNotification">Copied to clipboard!</div>
   </div>
@@ -90,6 +110,7 @@
     function replaceWords() {
       const pairsInput = document.getElementById('replacementPairs').value;
       const content = document.getElementById('contentInput').value;
+      const charLimit = parseInt(document.getElementById('charLimit').value, 10) || 3500; 
 
       const replacements = pairsInput.split(',').reduce((acc, pair) => {
         const [key, value] = pair.split('=');
@@ -97,7 +118,6 @@
         return acc;
       }, {});
 
-      // Step 1: Replace words first
       let replacedContent = content;
       for (const [word, replacement] of Object.entries(replacements)) {
         const escapedWord = replaceSpecialCharacters(word);
@@ -105,8 +125,6 @@
         replacedContent = replacedContent.replace(regex, replacement);
       }
 
-      // Step 2: Apply 3500 character limit AFTER replacement, excluding parentheses content
-      const chunkSize = 3500;  
       const resultContainer = document.getElementById('resultContainer');
       resultContainer.innerHTML = '';
 
@@ -120,7 +138,7 @@
         const paragraphWithoutParentheses = paragraph.replace(/.*?/g, '');
         const visibleLength = paragraphWithoutParentheses.length;
 
-        if (currentChunkVisibleLength + visibleLength + 1 <= chunkSize) {
+        if (currentChunkVisibleLength + visibleLength + 1 <= charLimit) {
           currentChunk += (currentChunk ? '\n' : '') + paragraph;
           currentChunkVisibleLength += visibleLength + 1;
         } else {
@@ -205,36 +223,23 @@
     function pasteIntoField(elementId) {
       const inputField = document.getElementById(elementId);
 
-      if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.permissions.query({ name: 'clipboard-read' }).then(permissionStatus => {
-          if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
-            navigator.clipboard.readText()
-              .then(text => {
-                if (text) {
-                  inputField.value = text;
-                  showNotification("Content pasted successfully!");
-                } else {
-                  showNotification("Clipboard is empty!", true);
-                }
-              })
-              .catch(err => {
-                console.error("Paste failed: ", err);
-                showNotification("Paste failed. Clipboard might be empty.", true);
-              });
+      navigator.clipboard.readText()
+        .then(text => {
+          if (text) {
+            inputField.value = text;
+            showNotification("Content pasted successfully!");
           } else {
-            showNotification("Clipboard access denied!", true);
+            showNotification("Clipboard is empty!", true);
           }
+        })
+        .catch(err => {
+          console.error("Paste failed: ", err);
+          showNotification("Paste failed. Clipboard might be empty.", true);
         });
-      } else {
-        showNotification("Paste not supported in this browser.", true);
-      }
     }
 
     function selectAll(elementId) {
-      const element = document.getElementById(elementId);
-      if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
-        element.select();
-      }
+      document.getElementById(elementId).select();
     }
 
     function showNotification(message, isError = false) {
