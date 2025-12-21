@@ -1,75 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multilingual Text Replacer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    textarea, input {
-      width: calc(100% - 120px);
-      margin-bottom: 15px;
-      padding: 10px;
-      font-size: 16px;
-      display: inline-block;
-    }
-    button {
-      width: 90px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-      padding: 10px;
-      font-size: 14px;
-      display: inline-block;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .blue-section {
-      background-color: #cce5ff;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .yellow-section {
-      background-color: #fff3cd;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .green-section {
-      background-color: #d4edda;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .result-box {
-      background: #b2dfdb;
-      border: 1px solid #157347;
-      min-height: 100px;
-      max-height: 200px;
-      padding: 10px;
-      font-size: 16px;
-      white-space: pre-wrap;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-    #copyNotification {
-      display: none;
-      color: #fff;
-      background: #4CAF50;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 5px;
-      font-size: 14px;
-      text-align: center;
-    }
-    .section {
-      margin-bottom: 30px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multilingual Text Replacer</title>
+
+<style>
+#replacementPairs {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.replacement-actions {
+  margin-top: 0px; /* small spacing like content block */
+  margin-bottom: 8px; /* spacing below the Paste button before next block */
+}
+
+.replacement-actions button {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#contentInput {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.content-actions {
+  margin-top: 0px;
+}
+
+.content-actions button {
+  width: 100%;
+  box-sizing: border-box;
+}
+.toggle-btn:hover {
+  color: #0b3570; /* slightly darker on hover */
+}
+
+.toggle-btn {
+  background: transparent; /* remove background color */
+  color: #0d47a1; /* dark blue arrow (darker than green copy button) */
+  border: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  min-height: 40px;        /* same as copy button */
+  width: 45px;             /* half of ~90px copy button */
+  padding: 0;
+  font-size: 16px;
+  line-height: 40px;       /* vertical centering */
+  text-align: center;
+  vertical-align: top;
+}
+
+.toggle-btn:active,
+.toggle-btn:focus {
+  outline: none;
+  transform: none;
+}
+
+.copy-btn {
+  box-sizing: border-box;
+  min-height: 40px;
+}
+
+.copy-btn:active,
+.copy-btn:focus {
+  outline: none;
+  transform: none;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+textarea, input {
+  width: calc(100% - 120px);
+  padding: 10px;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+button {
+  width: 90px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.blue-section { background:#cce5ff;padding:15px;border-radius:8px }
+.yellow-section { background:#fff3cd;padding:15px;border-radius:8px }
+.green-section { background:#d4edda;padding:15px;border-radius:8px }
+
+.section { margin-bottom:30px }
+
+.result-box {
+  background:#b2dfdb;
+  border:1px solid #157347;
+  min-height:100px;
+  max-height:200px;
+  padding:10px;
+  font-size:16px;
+  white-space:pre-wrap;
+  overflow-y:auto;
+  margin-bottom:10px;
+}
+
+#copyNotification {
+  display:none;
+  color:#fff;
+  background:#4CAF50;
+  padding:10px;
+  border-radius:5px;
+  margin-top:10px;
+  text-align:center;
+}
+
+/* remover icon */
+#removerIcon {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  width: 12px;
+  height: 12px;
+  background: #4da3ff;
+  border-radius: 50%;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+/* popup */
+#removerPopup {
+  display:none;
+  position:fixed;
+  right:10px;
+  bottom:40px;
+  width: calc(100% - 40px);
+  max-width: 360px;
+  background:#cce5ff;
+  padding:12px;
+  border-radius:8px;
+  box-shadow:0 0 8px rgba(0,0,0,.2);
+}
+
+#removerPopup textarea {
+  width:100%;
+  height:60px;
+}
+</style>
 </head>
+
 <body>
 
 <h2>Multilingual Text Replacer Tool</h2>
@@ -77,131 +160,188 @@
 <div class="section blue-section">
   <label for="replacementPairs">Enter replacements:</label>
   <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan , 你好= Hello">
-  <button onclick="pasteReplacement()">Paste</button>
-  <button onclick="selectAll('replacementPairs')">Select All</button>
-</div>
+  <div class="replacement-actions">
+    <button onclick="pasteReplacement()">Paste</button>
+  </div>
+</div> <!-- CLOSE BLUE SECTION HERE -->
 
 <div class="section yellow-section">
   <label for="contentInput">Enter the content:</label>
   <textarea id="contentInput" rows="6" placeholder="输入需要处理的文本..."></textarea>
-  <button onclick="pasteContent()">Paste</button>
-  <button onclick="selectAll('contentInput')">Select All</button>
+  <div class="content-actions">
+    <button onclick="pasteContent()">Paste</button>
+  </div>
 </div>
 
 <div class="section">
-  <label for="charLimit">Set Character Limit (Excluding Parentheses Content):</label>
-  <input type="number" id="charLimit" value="3500" min="500">
+<label for="charLimit">Set Character Limit (Excluding Parentheses Content):</label>
+<input type="number" id="charLimit" value="3500" min="500">
 </div>
 
 <div class="section green-section">
-  <h3>Result:</h3>
-  <button onclick="replaceWords()">Replace Words</button>
-  <div id="resultContainer"></div>
-  <div id="copyNotification">Copied to clipboard!</div>
+<h3>Result:</h3>
+<button onclick="processText()">Replace Words</button>
+<div id="resultContainer"></div>
+<div id="copyNotification"></div>
+</div>
+
+<div id="removerIcon" onclick="toggleRemoverPopup()"></div>
+
+<div id="removerPopup">
+<strong>Headnote remover</strong>
+<textarea id="headnoteRemover" placeholder="Paste headnote triggers here"></textarea>
+
+<strong>Footnote remover</strong>
+<textarea id="footnoteRemover" placeholder="Paste footnote triggers here"></textarea>
+
+<button onclick="toggleRemoverPopup()">Confirm</button>
 </div>
 
 <script>
-function replaceSpecialCharacters(str) {
-  return str.replace(/[.*+?^=!${}()|\/]/g, '\\$&');
+function flattenInput(t){
+  return t.split(/\r?\n/)
+    .map(l=>l.trim())
+    .filter(Boolean)
+    .map(l=>l.endsWith(',')?l:l+',')
+    .join(' ');
 }
 
-function replaceWords() {
-  const pairsInput = document.getElementById('replacementPairs').value;
-  const content = document.getElementById('contentInput').value;
-  const charLimit = parseInt(document.getElementById('charLimit').value, 10) || 3500;
+function pasteReplacement(){
+  navigator.clipboard.readText().then(t=>{
+    document.getElementById('replacementPairs').value = flattenInput(t);
+    showNotification("Content pasted successfully!");
+  });
+}
 
-  const replacements = pairsInput.split(',').reduce((acc, pair) => {
-    const idx = pair.indexOf('=');
-    if (idx !== -1) {
-      const key = pair.slice(0, idx).trim();
-      const value = pair.slice(idx + 1); // KEEP leading space
-      if (key) acc[key] = value;
+function pasteContent(){
+  navigator.clipboard.readText().then(t=>{
+    document.getElementById('contentInput').value = t;
+    showNotification("Content pasted successfully!");
+  });
+}
+
+function toggleRemoverPopup(){
+  const p = document.getElementById('removerPopup');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}
+
+function applyRemovers(text){
+  const heads = flattenInput(document.getElementById('headnoteRemover').value)
+    .split(',').map(s=>s.trim()).filter(Boolean);
+  const foots = flattenInput(document.getElementById('footnoteRemover').value)
+    .split(',').map(s=>s.trim()).filter(Boolean);
+
+  heads.forEach(h=>{
+    const i = text.indexOf(h);
+    if(i !== -1) text = text.slice(i + h.length);
+  });
+
+  foots.forEach(f=>{
+    const i = text.indexOf(f);
+    if(i !== -1) text = text.slice(0, i);
+  });
+
+  return text;
+}
+
+function replaceSpecialCharacters(str){
+  return str.replace(/[.*+?^=!${}()|\/]/g,'\\$&');
+}
+
+function processText(){
+  let text = document.getElementById('contentInput').value;
+  const limit = parseInt(document.getElementById('charLimit').value, 10) || 3500;
+
+  text = applyRemovers(text);
+
+  const pairs = document.getElementById('replacementPairs').value.split(',');
+  pairs.forEach(p=>{
+    const i = p.indexOf('=');
+    if(i !== -1){
+      const k = p.slice(0, i).trim();
+      const v = p.slice(i + 1);
+      text = text.replace(new RegExp(replaceSpecialCharacters(k), 'g'), v);
     }
-    return acc;
-  }, {});
+  });
 
-  let replacedContent = content;
-  for (const [word, replacement] of Object.entries(replacements)) {
-    const escapedWord = replaceSpecialCharacters(word);
-    const regex = new RegExp(escapedWord, 'g');
-    replacedContent = replacedContent.replace(regex, replacement);
-  }
+  const container = document.getElementById('resultContainer');
+  container.innerHTML = '';
 
-  const resultContainer = document.getElementById('resultContainer');
-  resultContainer.innerHTML = '';
+  const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
 
-  const paragraphs = replacedContent
-    .split('\n')
-    .filter(p => p.trim().length > 0); // DO NOT trim content
-
-  let currentChunk = '';
-  let currentLen = 0;
+  let chunk = '', len = 0;
   const chunks = [];
 
-  paragraphs.forEach(p => {
-    const visibleLen = p.replace(/.*?/g, '').length;
-    if (currentLen + visibleLen + 1 <= charLimit) {
-      currentChunk += (currentChunk ? '\n' : '') + p;
-      currentLen += visibleLen + 1;
+  paragraphs.forEach(p=>{
+    const visible = p.replace(/.*?/g,'').length;
+    if(len + visible + 1 <= limit){
+      chunk += (chunk ? '\n' : '') + p;
+      len += visible + 1;
     } else {
-      chunks.push(currentChunk);
-      currentChunk = p;
-      currentLen = visibleLen;
+      chunks.push(chunk);
+      chunk = p;
+      len = visible;
     }
   });
+  if(chunk) chunks.push(chunk);
 
-  if (currentChunk) chunks.push(currentChunk);
-
-  chunks.forEach(chunk => {
-    const box = document.createElement('div');
-    box.className = 'result-box';
-    box.innerText = chunk;
-    resultContainer.appendChild(box);
+  chunks.forEach((c,i)=>{
+    container.appendChild(createResultBox(c,i+1));
   });
 }
 
-function pasteReplacement() {
-  navigator.clipboard.readText().then(text => {
-    if (!text) {
-      showNotification("Clipboard is empty!", true);
-      return;
-    }
+function createResultBox(text, num){
+  const wrap = document.createElement('div');
+  wrap.style.position = 'relative';
 
-    const lines = text
-      .split(/\r?\n/)
-      .map(l => l.trim())
-      .filter(Boolean);
+  const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+  btn.textContent = 'Copy ' + num;
 
-    const flattened = lines
-      .map(line => line.endsWith(',') ? line : line + ',')
-      .join(' ');
+  const box = document.createElement('div');
+  box.className = 'result-box';
 
-    document.getElementById('replacementPairs').value = flattened;
-    showNotification("Content pasted successfully!");
-  }).catch(() => {
-    showNotification("Paste failed.", true);
+  const content = document.createElement('div');
+  text.split('\n').forEach(line => {
+    const p = document.createElement('p');
+    p.innerText = line;
+    p.style.margin = '0 0 1em 0'; // paragraph spacing
+    content.appendChild(p);
   });
+
+  box.appendChild(content);
+
+  const arrow = document.createElement('button');
+    arrow.className = 'toggle-btn';
+  arrow.innerHTML = '&#9660;';
+  arrow.style.display = 'none';
+
+  btn.onclick = () => {
+    navigator.clipboard.writeText(
+      text.split('\n').join('\n\n') // preserve spacing on copy
+    ).then(() => {
+      showNotification("Copied to clipboard!");
+      box.style.display = 'none';
+      arrow.style.display = 'inline-block';
+    });
+  };
+
+  arrow.onclick = () => {
+    box.style.display = 'block';
+    arrow.style.display = 'none';
+  };
+
+  wrap.appendChild(btn);
+  wrap.appendChild(box);
+  wrap.appendChild(arrow);
+  return wrap;
 }
 
-function pasteContent() {
-  navigator.clipboard.readText().then(text => {
-    if (text) {
-      document.getElementById('contentInput').value = text;
-      showNotification("Content pasted successfully!");
-    }
-  });
-}
-
-function selectAll(id) {
-  document.getElementById(id).select();
-}
-
-function showNotification(msg, isError = false) {
+function showNotification(msg){
   const n = document.getElementById('copyNotification');
   n.innerText = msg;
-  n.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
   n.style.display = 'block';
-  setTimeout(() => n.style.display = 'none', 2000);
+  setTimeout(()=>n.style.display='none',2000);
 }
 </script>
 
