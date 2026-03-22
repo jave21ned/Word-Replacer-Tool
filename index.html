@@ -165,7 +165,7 @@ button {
 
 <div class="section blue-section">
   <label for="replacementPairs">Enter replacements:</label>
-  <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan , 你好= Hello">
+  <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan;; 你好= Hello">
   <div class="replacement-actions">
     <button onclick="pasteReplacement()">Paste</button>
   </div>
@@ -208,7 +208,7 @@ function flattenInput(t){
   return t.split(/\r?\n/)
     .map(l=>l.trim())
     .filter(Boolean)
-    .map(l=>l.endsWith(',')?l:l+',')
+    .map(l=>l.endsWith(';;')?l:l+';;')
     .join(' ');
 }
 
@@ -233,9 +233,9 @@ function toggleRemoverPopup(){
 
 function applyRemovers(text){
   const heads = flattenInput(document.getElementById('headnoteRemover').value)
-    .split(',').map(s=>s.trim()).filter(Boolean);
+    .split(';;').map(s=>s.trim()).filter(Boolean);
   const foots = flattenInput(document.getElementById('footnoteRemover').value)
-    .split(',').map(s=>s.trim()).filter(Boolean);
+    .split(';;').map(s=>s.trim()).filter(Boolean);
 
   heads.forEach(h=>{
     const i = text.indexOf(h);
@@ -260,7 +260,7 @@ function processText(){
 
   text = applyRemovers(text);
 
-  const pairs = document.getElementById('replacementPairs').value.split(',');
+  const pairs = document.getElementById('replacementPairs').value.split(';;');
   pairs.forEach(p=>{
     const i = p.indexOf('=');
     if(i !== -1){
