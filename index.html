@@ -95,7 +95,7 @@ button {
 .yellow-section { background:#fff3cd;padding:15px;border-radius:8px }
 .green-section { background:#d4edda;padding:15px;border-radius:8px }
 
-.section { margin-bottom:30px }
+.section { margin-bottom:18px }
 
 .result-box {
   background:#b2dfdb;
@@ -156,6 +156,12 @@ button {
   box-sizing: border-box;
   margin-bottom: 8px;
 }
+
+#translateToggle {
+  width: 16px;
+  height: 16px;
+  transform: scale(1.1);
+}
 </style>
 </head>
 
@@ -180,8 +186,25 @@ button {
 </div>
 
 <div class="section">
-<label for="charLimit">Set Character Limit (Excluding Parentheses Content):</label>
-<input type="number" id="charLimit" value="3500" min="500">
+  <label for="charLimit">Set Character Limit (Excluding Parentheses Content):</label>
+  <input type="number" id="charLimit" value="3500" min="500">
+
+<div style="margin-top: 2px; margin-bottom: 0; text-align: left;">
+  <label style="
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    line-height: 24px;
+  ">
+    <input type="checkbox" id="translateToggle" style="
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    ">
+    <span>For translate?</span>
+  </label>
+</div>
 </div>
 
 <div class="section green-section">
@@ -323,9 +346,13 @@ function createResultBox(text, num){
   arrow.style.display = 'none';
 
   btn.onclick = () => {
-    navigator.clipboard.writeText(
-      text.split('\n').join('\n\n') // preserve spacing on copy
-    ).then(() => {
+    let finalText = text.split('\n').join('\n\n');
+
+    if (document.getElementById('translateToggle').checked) {
+  finalText = "Translate to English\n\n" + finalText;
+}
+
+navigator.clipboard.writeText(finalText).then(() => {
       showNotification("Copied to clipboard!");
       box.style.display = 'none';
       arrow.style.display = 'inline-block';
@@ -352,4 +379,4 @@ function showNotification(msg){
 </script>
 
 </body>
-</html>
+    </html>
