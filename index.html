@@ -162,6 +162,19 @@ button {
   height: 16px;
   transform: scale(1.1);
 }
+
+.used-replacements-section {
+  background: #eeeeee;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+#usedReplacements {
+  white-space: pre-wrap;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
 </style>
 </head>
 
@@ -212,6 +225,11 @@ button {
 <button onclick="processText()">Replace Words</button>
 <div id="resultContainer"></div>
 <div id="copyNotification"></div>
+</div>
+
+<div class="section used-replacements-section">
+  <h3>Used Replacements:</h3>
+  <div id="usedReplacements">No replacements used yet.</div>
 </div>
 
 <div id="removerIcon" onclick="toggleRemoverPopup()"></div>
@@ -292,15 +310,27 @@ function processText(){
 
   text = applyRemovers(text);
 
-  const pairs = document.getElementById('replacementPairs').value.split('!!');
+    const pairs = document.getElementById('replacementPairs').value.split('!!');
+  const usedReplacements = [];
+
   pairs.forEach(p=>{
     const i = p.indexOf('=');
+
     if(i !== -1){
       const k = p.slice(0, i).trim();
       const v = p.slice(i + 1);
-      text = text.replace(new RegExp(replaceSpecialCharacters(k), 'g'), v);
+
+      if(k && text.includes(k)){
+        usedReplacements.push(k + ' =' + v);
+        text = text.replace(new RegExp(replaceSpecialCharacters(k), 'g'), v);
+      }
     }
   });
+
+  document.getElementById('usedReplacements').textContent =
+    usedReplacements.length > 0
+      ? usedReplacements.join('\n')
+      : 'No replacements were used.';
 
   const container = document.getElementById('resultContainer');
   container.innerHTML = '';
