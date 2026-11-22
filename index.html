@@ -278,6 +278,101 @@ button {
   margin: 0;
 }
 
+/* Prevent long filenames from exceeding their containers */
+#replacementFileSelect,
+#managerFileSelect {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Replacement heading and fullscreen button */
+.replacement-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.replacement-heading h3 {
+  margin: 0;
+}
+
+.fullscreen-btn {
+  width: 40px;
+  min-width: 40px;
+  height: 36px;
+  padding: 0;
+  margin: 0;
+  background: #0d47a1;
+  border-radius: 5px;
+  font-size: 22px;
+}
+
+/* Fullscreen replacement viewer */
+#replacementFullscreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: white;
+  padding: 15px;
+  box-sizing: border-box;
+  flex-direction: column;
+}
+
+#replacementFullscreen.active {
+  display: flex;
+}
+
+.fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.fullscreen-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.fullscreen-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.fullscreen-controls button {
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  border-radius: 5px;
+  font-size: 20px;
+}
+
+#replacementFullscreenText {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  resize: none;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow: auto;
+  margin: 0;
+}
+
+.fullscreen-close {
+  background: #dc3545;
+}
+
 </style>
 </head>
 
@@ -445,7 +540,13 @@ button {
 
   <button onclick="saveManagerFile()">Save Replacements</button>
 
+  <div class="replacement-heading">
   <h3>Currently Saved Replacements</h3>
+  <button class="fullscreen-btn"
+    onclick="openReplacementFullscreen('addExistingEntries', 'Currently Saved Replacements')">
+    ⛶
+  </button>
+</div>
 
   <textarea id="addExistingEntries" readonly
     placeholder="Existing replacements will appear here."></textarea>
@@ -455,7 +556,13 @@ button {
   <!-- EDIT MODE -->
   <div id="editModePanel" class="manager-section green-section" style="display:none;">
 
-    <h3>Edit All Replacements</h3>
+    <div class="replacement-heading">
+  <h3>Edit All Replacements</h3>
+  <button class="fullscreen-btn"
+    onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
+    ⛶
+  </button>
+</div>
 
     <textarea id="editEntries"
       placeholder="The selected file's replacements will appear here."></textarea>
@@ -512,7 +619,29 @@ button {
 
 </div>
 
+<!-- FULLSCREEN REPLACEMENT VIEWER -->
+<div id="replacementFullscreen">
 
+  <div class="fullscreen-header">
+
+    <h3 id="fullscreenTitle">Replacements</h3>
+
+    <div class="fullscreen-controls">
+
+      <button onclick="changeFullscreenFontSize(2)">+</button>
+
+      <button onclick="changeFullscreenFontSize(-2)">−</button>
+
+      <button class="fullscreen-close"
+        onclick="closeReplacementFullscreen()">✕</button>
+
+    </div>
+
+  </div>
+
+  <textarea id="replacementFullscreenText" readonly></textarea>
+
+</div>
 
 <script>
   
@@ -1382,6 +1511,56 @@ function toggleFileChoice() {
     choice === 'new' ? 'block' : 'none';
 }
 
+// =====================================
+// FULLSCREEN REPLACEMENT VIEWER
+// =====================================
+
+let fullscreenFontSize = 16;
+
+function openReplacementFullscreen(sourceId, title) {
+
+  const source = document.getElementById(sourceId);
+
+  const viewer = document.getElementById(
+    'replacementFullscreen'
+  );
+
+  const display = document.getElementById(
+    'replacementFullscreenText'
+  );
+
+  document.getElementById('fullscreenTitle').textContent =
+    title;
+
+  display.value = source.value;
+
+  fullscreenFontSize = 16;
+  display.style.fontSize = fullscreenFontSize + 'px';
+
+  viewer.classList.add('active');
+}
+
+function changeFullscreenFontSize(change) {
+
+  const display = document.getElementById(
+    'replacementFullscreenText'
+  );
+
+  fullscreenFontSize = Math.max(
+    8,
+    Math.min(40, fullscreenFontSize + change)
+  );
+
+  display.style.fontSize = fullscreenFontSize + 'px';
+}
+
+function closeReplacementFullscreen() {
+
+  document.getElementById(
+    'replacementFullscreen'
+  ).classList.remove('active');
+
+}
 
 // =====================================
 // INITIALIZE
