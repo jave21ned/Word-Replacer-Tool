@@ -373,6 +373,55 @@ button {
   background: #dc3545;
 }
 
+.heading-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.manager-section .replacement-heading .resize-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 36px;
+  padding: 0;
+  margin: 0;
+  font-size: 20px;
+  background: #0d47a1;
+  border-radius: 5px;
+}
+
+.manager-section .replacement-heading .fullscreen-btn {
+  width: 40px;
+  min-width: 40px;
+  flex: 0 0 40px;
+  margin: 0;
+}
+
+/* Add spacing above the replacement heading controls */
+.replacement-heading {
+  margin-top: 15px;
+}
+
+/* Make the three controls smaller */
+.manager-section .replacement-heading .resize-btn {
+  width: 28px;
+  min-width: 28px;
+  height: 30px;
+  font-size: 17px;
+}
+
+.manager-section .replacement-heading .fullscreen-btn {
+  width: 34px;
+  min-width: 34px;
+  flex: 0 0 34px;
+  height: 30px;
+  font-size: 18px;
+}
+
+.heading-controls {
+  gap: 4px;
+}
+
 </style>
 </head>
 
@@ -542,10 +591,19 @@ button {
 
   <div class="replacement-heading">
   <h3>Currently Saved Replacements</h3>
-  <button class="fullscreen-btn"
-    onclick="openReplacementFullscreen('addExistingEntries', 'Currently Saved Replacements')">
-    ⛶
-  </button>
+
+  <div class="heading-controls">
+    <button class="resize-btn"
+      onclick="changeReplacementFontSize('addExistingEntries', 1)">+</button>
+
+    <button class="resize-btn"
+      onclick="changeReplacementFontSize('addExistingEntries', -1)">−</button>
+
+    <button class="fullscreen-btn"
+      onclick="openReplacementFullscreen('addExistingEntries', 'Currently Saved Replacements')">
+      ⛶
+    </button>
+  </div>
 </div>
 
   <textarea id="addExistingEntries" readonly
@@ -553,15 +611,24 @@ button {
 
 </div>
 
-  <!-- EDIT MODE -->
-  <div id="editModePanel" class="manager-section green-section" style="display:none;">
+<!-- EDIT MODE -->
+<div id="editModePanel" class="manager-section green-section">
 
-    <div class="replacement-heading">
+<div class="replacement-heading">
   <h3>Edit All Replacements</h3>
-  <button class="fullscreen-btn"
-    onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
-    ⛶
-  </button>
+
+  <div class="heading-controls">
+    <button class="resize-btn"
+      onclick="changeReplacementFontSize('editEntries', 1)">+</button>
+
+    <button class="resize-btn"
+      onclick="changeReplacementFontSize('editEntries', -1)">−</button>
+
+    <button class="fullscreen-btn"
+      onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
+      ⛶
+    </button>
+  </div>
 </div>
 
     <textarea id="editEntries"
@@ -1560,6 +1627,23 @@ function closeReplacementFullscreen() {
     'replacementFullscreen'
   ).classList.remove('active');
 
+}
+
+function changeReplacementFontSize(sourceId, change) {
+
+  const source = document.getElementById(sourceId);
+
+  const currentSize =
+    parseFloat(source.style.fontSize) ||
+    parseFloat(getComputedStyle(source).fontSize) ||
+    14;
+
+  const newSize = Math.max(
+    8,
+    Math.min(40, currentSize + change)
+  );
+
+  source.style.fontSize = newSize + 'px';
 }
 
 // =====================================
