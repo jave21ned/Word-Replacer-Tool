@@ -505,6 +505,36 @@ button {
   margin-top: 8px;
 }
 
+/* Black divider under each displayed replacement */
+.replacement-entry {
+  padding: 5px 0;
+  border-bottom: 1px solid black;
+  overflow-wrap: anywhere;
+}
+
+.replacement-entry:last-child {
+  border-bottom: none;
+}
+
+/* Divider lines inside editable textareas */
+.add-replacements-section textarea,
+#editEntries {
+  line-height: 32px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+
+  background-image: linear-gradient(
+    to bottom,
+    transparent 31px,
+    black 31px,
+    black 32px,
+    transparent 32px
+  );
+
+  background-size: 100% 32px;
+  background-attachment: local;
+}
+
 </style>
 </head>
 
@@ -697,41 +727,42 @@ Example:
     Edit Replacements
   </button>
 
-  <!-- EDIT REPLACEMENTS -->
-  <div id="editModePanel" style="display:none;">
 
-    <div class="replacement-heading">
+<!-- EDIT REPLACEMENTS -->
+<div id="editModePanel" style="display:none;">
 
-      <h3>Edit All Replacements</h3>
+  <div class="replacement-heading">
 
-      <div class="heading-controls">
+    <h3>Edit All Replacements</h3>
 
-        <button class="resize-btn"
-          onclick="changeReplacementFontSize('editEntries', 1)">+</button>
+    <div class="heading-controls">
 
-        <button class="resize-btn"
-          onclick="changeReplacementFontSize('editEntries', -1)">−</button>
+      <button class="resize-btn"
+        onclick="changeReplacementFontSize('editEntries', 1)">+</button>
 
-        <button class="fullscreen-btn"
-          onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
-          ⛶
-        </button>
+      <button class="resize-btn"
+        onclick="changeReplacementFontSize('editEntries', -1)">−</button>
 
-      </div>
+      <button class="fullscreen-btn"
+        onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
+        ⛶
+      </button>
+
     </div>
-
-
-</div>
-
-
-    <textarea id="editEntries"
-      placeholder="The selected file's replacements will appear here."></textarea>
-
-    <button onclick="saveManagerFile()">Save Changes</button>
   </div>
 
+  <textarea id="editEntries"
+    placeholder="The selected file's replacements will appear here."></textarea>
+
+  <button onclick="saveEditedReplacements()">
+    Save Changes
+  </button>
 
 </div>
+
+</div> <!-- Close Saved Replacements section -->
+
+</div> <!-- Close Tab 2 -->
 
 <!-- FULLSCREEN REPLACEMENT VIEWER -->
 <div id="replacementFullscreen">
@@ -1139,8 +1170,11 @@ loadSettingsIntoFields(activeFileSettings);
   parseReplacementEntries(parts.replacementText)
 );
 
-document.getElementById('addExistingEntries').textContent =
-  formatEntries(entries);
+displayReplacementEntries(
+  'addExistingEntries',
+  formatEntries(entries),
+  'No saved replacements.'
+);
 
     document.getElementById('editEntries').value =
   formatEntries(entries);
@@ -1288,6 +1322,26 @@ function formatEntries(entries) {
   ).join('\n');
 }
 
+function displayReplacementEntries(elementId, text, emptyMessage) {
+  const container = document.getElementById(elementId);
+
+  container.innerHTML = '';
+
+  const lines = text.split(/\r?\n/).filter(line => line.trim());
+
+  if (lines.length === 0) {
+    container.textContent = emptyMessage || 'No entries found.';
+    return;
+  }
+
+  lines.forEach(line => {
+    const entry = document.createElement('div');
+    entry.className = 'replacement-entry';
+    entry.textContent = line;
+    container.appendChild(entry);
+  });
+}
+
 
 // =====================================
 // SAVE REPLACEMENTS
@@ -1391,8 +1445,11 @@ if (parts.settings) {
   activeFileSettings = parts.settings;
 }
 
-document.getElementById('addExistingEntries').textContent =
-  replacementText;
+displayReplacementEntries(
+  'addExistingEntries',
+  replacementText,
+  'No saved replacements.'
+);
 
 document.getElementById('editEntries').value = replacementText;
 
@@ -1539,10 +1596,11 @@ function processText() {
     }
   });
 
-  document.getElementById('usedReplacements').textContent =
-    usedReplacements.length > 0
-      ? usedReplacements.join('\n')
-      : 'No replacements were used.';
+displayReplacementEntries(
+  'usedReplacements',
+  usedReplacements.join('\n'),
+  'No replacements were used.'
+);
 
   const container = document.getElementById('resultContainer');
   container.innerHTML = '';
