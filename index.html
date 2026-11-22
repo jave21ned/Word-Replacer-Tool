@@ -175,6 +175,109 @@ button {
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
+
+/* Two-tab navigation */
+.tab-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.tab-buttons button {
+  width: 50%;
+  padding: 12px 5px;
+  background: #ddd;
+  color: #333;
+  border-radius: 6px;
+}
+
+.tab-buttons button.active {
+  background: #0d47a1;
+  color: white;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Replacement Manager */
+.manager-section {
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+.manager-section input,
+.manager-section textarea,
+.manager-section select {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+}
+
+.manager-section textarea {
+  min-height: 160px;
+}
+
+.manager-section button {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+.manager-section textarea[readonly] {
+  background: #f5f5f5;
+  color: #444;
+}
+
+.manager-label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+#folderStatus {
+  font-size: 14px;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+
+.remover-settings-section textarea {
+  min-height: 80px;
+}
+
+/* dsaudjfcd*/
+.remover-settings-section.collapsed label,
+.remover-settings-section.collapsed input,
+.remover-settings-section.collapsed textarea,
+.remover-settings-section.collapsed button:not(#removerSettingsToggle) {
+  display: none;
+}
+
+.radio-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 10px 0;
+}
+
+.radio-toggle-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+  margin: 0;
+}
+
+.radio-toggle-group input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+
 </style>
 </head>
 
@@ -182,147 +285,937 @@ button {
 
 <h2>Multilingual Text Replacer Tool</h2>
 
-<div class="section blue-section">
-  <label for="replacementPairs">Enter replacements:</label>
-  <input id="replacementPairs" placeholder="e.g., 罗南= Luo Nan!! 你好= Hello!!">
-  <div class="replacement-actions">
-    <button onclick="pasteReplacement()">Paste</button>
-  </div>
-</div> <!-- CLOSE BLUE SECTION HERE -->
+<div class="tab-buttons">
+  <button id="tab1Button" class="active" onclick="switchTab(1)">
+    Text Replacer
+  </button>
 
-<div class="section yellow-section">
-  <label for="contentInput">Enter the content:</label>
-  <textarea id="contentInput" rows="6" placeholder="输入需要处理的文本..."></textarea>
-  <div class="content-actions">
-    <button onclick="pasteContent()">Paste</button>
+  <button id="tab2Button" onclick="switchTab(2)">
+    Replacement Manager
+  </button>
+</div>
+
+<!-- TAB 1: TEXT REPLACER -->
+<div id="tab1" class="tab-content active">
+
+  <div class="section blue-section">
+    <label for="replacementFileSelect">Select replacement file:</label>
+    <select id="replacementFileSelect"
+            onchange="loadReplacementFromTab1(this.value)">
+      <option value="">Choose a TXT file</option>
+    </select>
+  </div>
+
+  <div class="section yellow-section">
+    <label for="contentInput">Enter the content:</label>
+    <textarea id="contentInput" rows="6"
+      placeholder="输入需要处理的文本..."></textarea>
+
+    <div class="content-actions">
+      <button onclick="pasteContent()">Paste</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <label for="charLimit">
+      Set Character Limit (Excluding Parentheses Content):
+    </label>
+
+    <input type="number" id="charLimit" value="3500" min="500">
+
+    <div style="margin-top: 2px; margin-bottom: 0; text-align: left;">
+      <label style="
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        line-height: 24px;
+      ">
+        <input type="checkbox" id="translateToggle" style="
+          width: 18px;
+          height: 18px;
+          margin: 0;
+        ">
+        <span>For translate?</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="section green-section">
+    <h3>Result:</h3>
+    <button onclick="processText()">Replace Words</button>
+    <div id="resultContainer"></div>
+    <div id="copyNotification"></div>
+  </div>
+
+  <div class="section used-replacements-section">
+    <h3>Used Replacements:</h3>
+    <div id="usedReplacements">No replacements used yet.</div>
+  </div>
+
+</div>
+
+
+<!-- TAB 2: REPLACEMENT MANAGER -->
+<div id="tab2" class="tab-content">
+
+  <div class="manager-section blue-section">
+    <h3>Replacement Folder</h3>
+
+    <button onclick="connectFolder()">Choose / Reconnect Folder</button>
+
+    <div id="folderStatus">
+      No folder selected.
+    </div>
+  </div>
+
+<div class="manager-section yellow-section">
+  <h3>Select Replacement File</h3>
+
+  <div class="radio-toggle-group">
+    <label>
+      <input type="radio" name="fileChoice"
+        value="existing" checked
+        onchange="toggleFileChoice()">
+      Use Existing File
+    </label>
+
+    <label>
+      <input type="radio" name="fileChoice"
+        value="new"
+        onchange="toggleFileChoice()">
+      Create New File
+    </label>
+  </div>
+
+  <div id="existingFilePanel">
+    <label class="manager-label" for="managerFileSelect">
+      Existing TXT files:
+    </label>
+
+    <select id="managerFileSelect"
+      onchange="loadReplacementFromManager(this.value)">
+      <option value="">Choose a TXT file</option>
+    </select>
+  </div>
+
+  <div id="newFilePanel" style="display:none;">
+    <label class="manager-label" for="newFileName">
+      New TXT file name:
+    </label>
+
+    <input id="newFileName"
+      type="text"
+      placeholder="Enter file name">
+
+    <button onclick="createNewFile()">Create New File</button>
   </div>
 </div>
 
-<div class="section">
-  <label for="charLimit">Set Character Limit (Excluding Parentheses Content):</label>
-  <input type="number" id="charLimit" value="3500" min="500">
+  <div class="manager-section blue-section">
+  <h3>Replacement Settings</h3>
 
-<div style="margin-top: 2px; margin-bottom: 0; text-align: left;">
-  <label style="
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+  <div class="radio-toggle-group">
+    <label>
+      <input type="radio" name="managerMode"
+        value="add" checked
+        onchange="toggleManagerMode()">
+      Add Replacements
+    </label>
+
+    <label>
+      <input type="radio" name="managerMode"
+        value="edit"
+        onchange="toggleManagerMode()">
+      Edit Replacements
+    </label>
+  </div>
+</div>
+
+
+  <!-- ADD MODE -->
+<div id="addModePanel" class="manager-section green-section">
+
+  <h3>Add New Replacements</h3>
+
+  <textarea id="newReplacements"
+    placeholder="Enter new replacements here, one entry per line.&#10;Example:&#10;夜扶桑= Ye Fusang&#10;謝棲棠= Xie Qitang"></textarea>
+
+  <button onclick="pasteReplacements()">Paste</button>
+
+  <button onclick="saveManagerFile()">Save Replacements</button>
+
+  <h3>Currently Saved Replacements</h3>
+
+  <textarea id="addExistingEntries" readonly
+    placeholder="Existing replacements will appear here."></textarea>
+
+</div>
+
+  <!-- EDIT MODE -->
+  <div id="editModePanel" class="manager-section green-section" style="display:none;">
+
+    <h3>Edit All Replacements</h3>
+
+    <textarea id="editEntries"
+      placeholder="The selected file's replacements will appear here."></textarea>
+
+    <button onclick="saveManagerFile()">Save Changes</button>
+  </div>
+<div class="manager-section yellow-section remover-settings-section collapsed">
+
+<button
+  type="button"
+  id="removerSettingsToggle"
+  onclick="toggleRemoverSettings()"
+  style="
+    float: right;
+    width: auto;
+    padding: 2px 6px;
+    margin: 0;
+    background: transparent;
+    color: black;
     font-size: 16px;
-    line-height: 24px;
-  ">
-    <input type="checkbox" id="translateToggle" style="
-      width: 18px;
-      height: 18px;
-      margin: 0;
-    ">
-    <span>For translate?</span>
+    border: none;
+    cursor: pointer;
+  ">▼</button>
+
+<h3>Remover Settings</h3>
+
+  <label class="manager-label" for="removerSeparator">
+    Separator:
   </label>
+
+  <input id="removerSeparator"
+    value="!!"
+    placeholder="e.g. !!">
+
+  <label class="manager-label" for="headnoteRemover">
+    Headnote Remover:
+  </label>
+
+  <textarea id="headnoteRemover"
+    placeholder="Paste headnote triggers here"></textarea>
+
+  <label class="manager-label" for="footnoteRemover">
+    Footnote Remover:
+  </label>
+
+  <textarea id="footnoteRemover"
+    placeholder="Paste footnote triggers here"></textarea>
+	<button onclick="saveRemoverSettings()">
+  Save Settings
+</button>
+
 </div>
+
+
 </div>
 
-<div class="section green-section">
-<h3>Result:</h3>
-<button onclick="processText()">Replace Words</button>
-<div id="resultContainer"></div>
-<div id="copyNotification"></div>
-</div>
 
-<div class="section used-replacements-section">
-  <h3>Used Replacements:</h3>
-  <div id="usedReplacements">No replacements used yet.</div>
-</div>
-
-<div id="removerIcon" onclick="toggleRemoverPopup()"></div>
-
-<div id="removerPopup">
-
-<label>
-  Separator:
-  <input id="removerSeparator" value="!!" placeholder="e.g. !!">
-</label>
-
-<strong>Headnote remover</strong>
-<textarea id="headnoteRemover" placeholder="Paste headnote triggers here"></textarea>
-
-<strong>Footnote remover</strong>
-<textarea id="footnoteRemover" placeholder="Paste footnote triggers here"></textarea>
-
-<button onclick="toggleRemoverPopup()">Confirm</button>
-</div>
 
 <script>
-function flattenInput(t){
-  return t.split(/\r?\n/)
-    .map(l=>l.trim())
+  
+let folderHandle = null;
+let selectedFileHandle = null;
+let selectedFileName = '';
+let selectedFileText = '';
+let activeReplacementText = '';
+
+let activeFileSettings = {
+  separator: '!!',
+  headnotes: '',
+  footnotes: ''
+};
+
+function getFileParts(raw) {
+  const marker = '{\n  "__removerSettings": true,';
+  const index = raw.lastIndexOf(marker);
+
+  if (index === -1) {
+    return {
+      replacementText: raw,
+      settings: null
+    };
+  }
+
+  const preceding = raw.slice(0, index);
+
+  if (index !== 0 && !/\r?\n\r?\n$/.test(preceding)) {
+    return {
+      replacementText: raw,
+      settings: null
+    };
+  }
+
+  try {
+    const data = JSON.parse(raw.slice(index).trim());
+
+    if (!data.__removerSettings) {
+      throw new Error('Invalid settings block');
+    }
+
+    return {
+      replacementText: preceding.replace(/\r?\n\r?\n$/, ''),
+      settings: {
+        separator: data.separator || '!!',
+        headnotes: data.headnotes || '',
+        footnotes: data.footnotes || ''
+      }
+    };
+  } catch (error) {
+    return {
+      replacementText: raw,
+      settings: null
+    };
+  }
+}
+
+function createSettingsBlock(settings) {
+  return JSON.stringify({
+    __removerSettings: true,
+    separator: settings.separator,
+    headnotes: settings.headnotes,
+    footnotes: settings.footnotes
+  }, null, 2);
+}
+
+function loadSettingsIntoFields(settings) {
+  document.getElementById('removerSeparator').value =
+    settings.separator;
+
+  document.getElementById('headnoteRemover').value =
+    settings.headnotes;
+
+  document.getElementById('footnoteRemover').value =
+    settings.footnotes;
+}
+
+function getSettingsFromFields() {
+  return {
+    separator:
+      document.getElementById('removerSeparator').value || '!!',
+
+    headnotes:
+      document.getElementById('headnoteRemover').value,
+
+    footnotes:
+      document.getElementById('footnoteRemover').value
+  };
+}
+
+
+
+// =====================================
+// TAB NAVIGATION
+// =====================================
+
+function switchTab(number) {
+  document.getElementById('tab1').classList.toggle('active', number === 1);
+  document.getElementById('tab2').classList.toggle('active', number === 2);
+
+  document.getElementById('tab1Button').classList.toggle('active', number === 1);
+  document.getElementById('tab2Button').classList.toggle('active', number === 2);
+}
+
+function toggleManagerMode() {
+  const mode = document.querySelector(
+    'input[name="managerMode"]:checked'
+  ).value;
+
+  document.getElementById('addModePanel').style.display =
+    mode === 'add' ? 'block' : 'none';
+
+  document.getElementById('editModePanel').style.display =
+    mode === 'edit' ? 'block' : 'none';
+}
+
+
+// =====================================
+// FOLDER HANDLE STORAGE
+// =====================================
+
+function openFolderDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('ReplacementManagerDB', 1);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore('handles');
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveFolderHandle(handle) {
+  const db = await openFolderDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction('handles', 'readwrite');
+
+    transaction.objectStore('handles').put(handle, 'folder');
+
+    transaction.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+  });
+}
+
+async function getStoredFolderHandle() {
+  const db = await openFolderDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction('handles', 'readonly');
+    const request = transaction.objectStore('handles').get('folder');
+
+    request.onsuccess = () => {
+      db.close();
+      resolve(request.result || null);
+    };
+
+    request.onerror = () => {
+      db.close();
+      reject(request.error);
+    };
+  });
+}
+
+
+// =====================================
+// CONNECT TO FOLDER
+// =====================================
+
+async function connectFolder() {
+  try {
+    if (!window.showDirectoryPicker) {
+      alert('Your browser does not support folder access. Please use a supported browser.');
+      return;
+    }
+
+    const savedHandle = await getStoredFolderHandle();
+
+    if (savedHandle) {
+      let permission = await savedHandle.queryPermission({
+        mode: 'readwrite'
+      });
+
+      if (permission !== 'granted') {
+        permission = await savedHandle.requestPermission({
+          mode: 'readwrite'
+        });
+      }
+
+      if (permission === 'granted') {
+        folderHandle = savedHandle;
+      }
+    }
+
+    if (!folderHandle) {
+      folderHandle = await window.showDirectoryPicker({
+        mode: 'readwrite'
+      });
+
+      await saveFolderHandle(folderHandle);
+    }
+
+    document.getElementById('folderStatus').textContent =
+      'Connected folder: ' + folderHandle.name;
+
+    await refreshFileLists();
+
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      alert('Unable to access folder: ' + error.message);
+    }
+  }
+}
+
+
+// Restore folder automatically when possible
+async function restoreFolderHandle() {
+  try {
+    const savedHandle = await getStoredFolderHandle();
+
+    if (!savedHandle) return;
+
+    const permission = await savedHandle.queryPermission({
+      mode: 'readwrite'
+    });
+
+    if (permission === 'granted') {
+      folderHandle = savedHandle;
+
+      document.getElementById('folderStatus').textContent =
+        'Connected folder: ' + folderHandle.name;
+
+      await refreshFileLists();
+    } else {
+      document.getElementById('folderStatus').textContent =
+        'Previously selected folder found. Click Choose / Reconnect Folder to reconnect.';
+    }
+
+  } catch (error) {
+    console.log('Could not restore folder:', error);
+  }
+}
+
+
+// =====================================
+// LIST TXT FILES
+// =====================================
+
+async function refreshFileLists() {
+  if (!folderHandle) return;
+
+  const files = [];
+
+  for await (const [name, handle] of folderHandle.entries()) {
+    if (
+      handle.kind === 'file' &&
+      name.toLowerCase().endsWith('.txt')
+    ) {
+      files.push(name);
+    }
+  }
+
+  files.sort((a, b) => a.localeCompare(b, 'en', {
+    sensitivity: 'base'
+  }));
+
+  const selectors = [
+    document.getElementById('replacementFileSelect'),
+    document.getElementById('managerFileSelect')
+  ];
+
+  selectors.forEach(select => {
+    const previousValue = select.value;
+
+    select.innerHTML = '<option value="">Choose a TXT file</option>';
+
+    files.forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    });
+
+    if (files.includes(previousValue)) {
+      select.value = previousValue;
+    }
+  });
+
+  if (selectedFileName && files.includes(selectedFileName)) {
+    document.getElementById('replacementFileSelect').value =
+      selectedFileName;
+
+    document.getElementById('managerFileSelect').value =
+      selectedFileName;
+  }
+}
+
+
+// =====================================
+// SELECT AND LOAD FILE
+// =====================================
+
+async function loadReplacementFromTab1(name) {
+  if (name) {
+    await loadFileByName(name);
+  }
+}
+
+async function loadReplacementFromManager(name) {
+  if (name) {
+    await loadFileByName(name);
+  }
+}
+
+async function loadFileByName(name) {
+  if (!folderHandle || !name) return;
+
+  try {
+    selectedFileHandle = await folderHandle.getFileHandle(name);
+
+    const file = await selectedFileHandle.getFile();
+
+selectedFileText = await file.text();
+selectedFileName = name;
+
+const parts = getFileParts(selectedFileText);
+
+activeReplacementText = parts.replacementText;
+
+activeFileSettings = parts.settings || {
+  separator: '!!',
+  headnotes: '',
+  footnotes: ''
+};
+
+loadSettingsIntoFields(activeFileSettings);
+
+    document.getElementById('replacementFileSelect').value = name;
+    document.getElementById('managerFileSelect').value = name;
+
+    const entries = sortEntries(
+  parseReplacementEntries(parts.replacementText)
+);
+
+    document.getElementById('addExistingEntries').value =
+      formatEntries(entries);
+
+    document.getElementById('editEntries').value =
+  formatEntries(entries);
+
+  } catch (error) {
+    alert('Unable to load file: ' + error.message);
+  }
+}
+
+
+// =====================================
+// CREATE NEW TXT FILE
+// =====================================
+
+async function createNewFile() {
+  if (!folderHandle) {
+    alert('Please select a folder first.');
+    return;
+  }
+
+  let name = document.getElementById('newFileName').value.trim();
+
+  if (!name) {
+    alert('Please enter a file name.');
+    return;
+  }
+
+  if (/[\\/:*?"<>|]/.test(name)) {
+    alert('The file name contains invalid characters.');
+    return;
+  }
+
+  if (!name.toLowerCase().endsWith('.txt')) {
+    name += '.txt';
+  }
+
+  try {
+    const existingFiles = [];
+
+    for await (const [fileName, handle] of folderHandle.entries()) {
+      if (handle.kind === 'file') {
+        existingFiles.push(fileName);
+      }
+    }
+
+    if (existingFiles.includes(name)) {
+      alert('A file with this name already exists.');
+      return;
+    }
+
+    selectedFileHandle = await folderHandle.getFileHandle(name, {
+      create: true
+    });
+
+    const writable = await selectedFileHandle.createWritable();
+    await writable.write('');
+    await writable.close();
+
+    selectedFileName = name;
+    selectedFileText = '';
+    activeReplacementText = '';
+
+    document.getElementById('newFileName').value = '';
+    document.querySelector(
+  'input[name="managerMode"][value="add"]'
+).checked = true;
+
+    toggleManagerMode();
+
+    await refreshFileLists();
+    await loadFileByName(name);
+
+document.querySelector(
+  'input[name="fileChoice"][value="existing"]'
+).checked = true;
+
+toggleFileChoice();
+
+    document.getElementById('newReplacements').value = '';
+
+    alert('New TXT file created successfully.');
+
+  } catch (error) {
+    alert('Unable to create file: ' + error.message);
+  }
+}
+
+
+// =====================================
+// PARSE AND SORT REPLACEMENTS
+// =====================================
+
+function parseReplacementEntries(raw) {
+  return raw.split(/!!|\r?\n/)
+    .map(line => line.trim())
     .filter(Boolean)
-    .map(l=>l.endsWith('!!')?l:l+'!!')
+    .map(line => {
+      const i = line.indexOf('=');
+
+      if (i === -1) return null;
+
+      const key = line.slice(0, i).trim();
+      const value = line.slice(i + 1);
+
+      if (!key) return null;
+
+      return {
+        key: key,
+        value: value
+      };
+    })
+    .filter(Boolean);
+}
+
+function countChineseCharacters(text) {
+  return (text.match(/\p{Script=Han}/gu) || []).length;
+}
+
+function sortEntries(entries) {
+  return [...entries].sort((a, b) => {
+    const countA = countChineseCharacters(a.key);
+    const countB = countChineseCharacters(b.key);
+
+    if (countA !== countB) {
+      return countB - countA;
+    }
+
+    const englishComparison = a.value.trim().localeCompare(
+      b.value.trim(),
+      'en',
+      { sensitivity: 'base' }
+    );
+
+    if (englishComparison !== 0) {
+      return englishComparison;
+    }
+
+    return a.key.localeCompare(b.key);
+  });
+}
+
+function formatEntries(entries) {
+  return entries.map(entry =>
+    entry.key + '=' + entry.value
+  ).join('\n');
+}
+
+
+// =====================================
+// SAVE REPLACEMENTS
+// =====================================
+
+async function saveManagerFile() {
+  if (!selectedFileHandle) {
+    alert('Please select or create a TXT file first.');
+    return;
+  }
+
+  const mode = document.querySelector(
+  'input[name="managerMode"]:checked'
+).value;
+
+  let entries = [];
+
+  if (mode === 'add') {
+    const existing = parseReplacementEntries(
+  getFileParts(selectedFileText).replacementText
+);
+    const additions = parseReplacementEntries(
+      document.getElementById('newReplacements').value
+    );
+
+    entries = [...existing];
+
+    const existingKeys = new Set(
+      existing.map(entry => entry.key)
+    );
+
+    let addedCount = 0;
+    let duplicateCount = 0;
+
+    additions.forEach(entry => {
+      if (existingKeys.has(entry.key)) {
+        duplicateCount++;
+      } else {
+        entries.push(entry);
+        existingKeys.add(entry.key);
+        addedCount++;
+      }
+    });
+
+    if (addedCount === 0) {
+      alert(
+        duplicateCount > 0
+          ? 'No new entries added. All submitted Chinese terms already exist.'
+          : 'Please enter valid replacement entries.'
+      );
+      return;
+    }
+
+  } else {
+    entries = parseReplacementEntries(
+      document.getElementById('editEntries').value
+    );
+
+    const keys = new Set();
+
+    for (const entry of entries) {
+      if (keys.has(entry.key)) {
+        alert(
+          'Duplicate Chinese term found: ' + entry.key +
+          '\nPlease remove the duplicate before saving.'
+        );
+        return;
+      }
+
+      keys.add(entry.key);
+    }
+  }
+
+  if (entries.length === 0) {
+    alert('There are no valid replacement entries to save.');
+    return;
+  }
+
+  entries = sortEntries(entries);
+
+  const parts = getFileParts(selectedFileText);
+
+const replacementText = formatEntries(entries);
+
+const output = parts.settings
+  ? replacementText + '\n\n' + createSettingsBlock(parts.settings)
+  : replacementText;
+
+  try {
+    const writable = await selectedFileHandle.createWritable();
+
+    await writable.write(output);
+    await writable.close();
+
+    selectedFileText = output;
+activeReplacementText = replacementText;
+
+if (parts.settings) {
+  activeFileSettings = parts.settings;
+}
+
+    document.getElementById('addExistingEntries').value = replacementText;
+document.getElementById('editEntries').value = replacementText;
+
+    if (mode === 'add') {
+      document.getElementById('newReplacements').value = '';
+    }
+
+    alert('Replacements saved and sorted successfully.');
+
+    await refreshFileLists();
+
+  } catch (error) {
+    alert('Unable to save file: ' + error.message);
+  }
+}
+
+
+// =====================================
+// ORIGINAL TEXT REPLACER FUNCTIONS
+// =====================================
+
+function pasteContent() {
+  navigator.clipboard.readText().then(t => {
+    document.getElementById('contentInput').value = t;
+    showNotification('Content pasted successfully!');
+  });
+}
+
+function toggleRemoverPopup() {
+  const p = document.getElementById('removerPopup');
+
+  p.style.display =
+    p.style.display === 'block' ? 'none' : 'block';
+}
+
+function flattenInput(t, separator = '!!') {
+  return t.split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => l.endsWith(separator) ? l : l + separator)
     .join(' ');
 }
 
-function pasteReplacement(){
-  navigator.clipboard.readText().then(t=>{
-    document.getElementById('replacementPairs').value = flattenInput(t);
-    showNotification("Content pasted successfully!");
-  });
-}
+function applyRemovers(text) {
+  const separator =
+    activeFileSettings.separator || '!!';
 
-function pasteContent(){
-  navigator.clipboard.readText().then(t=>{
-    document.getElementById('contentInput').value = t;
-    showNotification("Content pasted successfully!");
-  });
-}
+  const heads = flattenInput(
+    activeFileSettings.headnotes,
+    separator
+  ).split(separator).map(s => s.trim()).filter(Boolean);
 
-function toggleRemoverPopup(){
-  const p = document.getElementById('removerPopup');
-  p.style.display = p.style.display === 'block' ? 'none' : 'block';
-}
+  const foots = flattenInput(
+    activeFileSettings.footnotes,
+    separator
+  ).split(separator).map(s => s.trim()).filter(Boolean);
 
-function applyRemovers(text){
-  const separator = document.getElementById('removerSeparator').value || '!!';
-
-const heads = flattenInput(document.getElementById('headnoteRemover').value)
-  .split(separator).map(s=>s.trim()).filter(Boolean);
-
-const foots = flattenInput(document.getElementById('footnoteRemover').value)
-  .split(separator).map(s=>s.trim()).filter(Boolean);
-
-  heads.forEach(h=>{
+  heads.forEach(h => {
     const i = text.indexOf(h);
-    if(i !== -1) text = text.slice(i + h.length);
+    if (i !== -1) text = text.slice(i + h.length);
   });
 
-  foots.forEach(f=>{
+  foots.forEach(f => {
     const i = text.indexOf(f);
-    if(i !== -1) text = text.slice(0, i);
+    if (i !== -1) text = text.slice(0, i);
   });
 
   return text;
 }
 
-function replaceSpecialCharacters(str){
-  return str.replace(/[.*+?^=!${}()|\/]/g,'\\$&');
+function replaceSpecialCharacters(str) {
+  return str.replace(/[.*+?^=!${}()|\/]/g, '\\$&');
 }
 
-function processText(){
+function processText() {
   let text = document.getElementById('contentInput').value;
-  const limit = parseInt(document.getElementById('charLimit').value, 10) || 3500;
+
+  const limit =
+    parseInt(document.getElementById('charLimit').value, 10) || 3500;
 
   text = applyRemovers(text);
 
-    const pairs = document.getElementById('replacementPairs').value.split('!!');
+  const pairs = activeReplacementText.split(/!!|\r?\n/);
   const usedReplacements = [];
 
-  pairs.forEach(p=>{
+  pairs.forEach(p => {
     const i = p.indexOf('=');
 
-    if(i !== -1){
+    if (i !== -1) {
       const k = p.slice(0, i).trim();
       const v = p.slice(i + 1);
 
-      if(k && text.includes(k)){
+      if (k && text.includes(k)) {
         usedReplacements.push(k + ' =' + v);
-        text = text.replace(new RegExp(replaceSpecialCharacters(k), 'g'), v);
+
+        text = text.replace(
+          new RegExp(replaceSpecialCharacters(k), 'g'),
+          v
+        );
       }
     }
   });
@@ -340,47 +1233,56 @@ function processText(){
   let chunk = '', len = 0;
   const chunks = [];
 
-  paragraphs.forEach(p=>{
-    const visible = p.replace(/.*?/g,'').length;
-    if(len + visible + 1 <= limit){
+  paragraphs.forEach(p => {
+    const visible = p.replace(/.*?/g, '').length;
+
+    if (len + visible + 1 <= limit) {
       chunk += (chunk ? '\n' : '') + p;
       len += visible + 1;
     } else {
-      chunks.push(chunk);
+      if (chunk) chunks.push(chunk);
+
       chunk = p;
       len = visible;
     }
   });
-  if(chunk) chunks.push(chunk);
 
-  chunks.forEach((c,i)=>{
-    container.appendChild(createResultBox(c,i+1));
+  if (chunk) chunks.push(chunk);
+
+  chunks.forEach((c, i) => {
+    container.appendChild(createResultBox(c, i + 1));
   });
 }
 
-function createResultBox(text, num){
+
+// =====================================
+// RESULT BOXES AND COPY BUTTONS
+// =====================================
+
+function createResultBox(text, num) {
   const wrap = document.createElement('div');
   wrap.style.position = 'relative';
 
   const btn = document.createElement('button');
-    btn.className = 'copy-btn';
+  btn.className = 'copy-btn';
   btn.textContent = 'Copy ' + num;
 
   const box = document.createElement('div');
   box.className = 'result-box';
 
   const content = document.createElement('div');
+
   text.split('\n').forEach(line => {
     const p = document.createElement('p');
     p.innerText = line;
-    p.style.margin = '0 0 1em 0'; // paragraph spacing
+    p.style.margin = '0 0 1em 0';
     content.appendChild(p);
   });
 
   box.appendChild(content);
 
   const arrow = document.createElement('button');
-    arrow.className = 'toggle-btn';
+  arrow.className = 'toggle-btn';
   arrow.innerHTML = '&#9660;';
   arrow.style.display = 'none';
 
@@ -388,11 +1290,11 @@ function createResultBox(text, num){
     let finalText = text.split('\n').join('\n\n');
 
     if (document.getElementById('translateToggle').checked) {
-  finalText = "Translate to English\n\n" + finalText;
-}
+      finalText = 'Translate to English\n\n' + finalText;
+    }
 
-navigator.clipboard.writeText(finalText).then(() => {
-      showNotification("Copied to clipboard!");
+    navigator.clipboard.writeText(finalText).then(() => {
+      showNotification('Copied to clipboard!');
       box.style.display = 'none';
       arrow.style.display = 'inline-block';
     });
@@ -406,15 +1308,88 @@ navigator.clipboard.writeText(finalText).then(() => {
   wrap.appendChild(btn);
   wrap.appendChild(box);
   wrap.appendChild(arrow);
+
   return wrap;
 }
 
-function showNotification(msg){
+function showNotification(msg) {
   const n = document.getElementById('copyNotification');
+
   n.innerText = msg;
   n.style.display = 'block';
-  setTimeout(()=>n.style.display='none',2000);
+
+  setTimeout(() => n.style.display = 'none', 2000);
 }
+
+function toggleRemoverSettings() {
+  const section = document.querySelector(
+    '.remover-settings-section'
+  );
+
+  const button = document.getElementById(
+    'removerSettingsToggle'
+  );
+
+  section.classList.toggle('collapsed');
+
+  button.textContent = section.classList.contains('collapsed')
+    ? '▼'
+    : '▲';
+}
+
+async function saveRemoverSettings() {
+  if (!selectedFileHandle) {
+    alert('Please select a replacement file first.');
+    return;
+  }
+
+  const settings = getSettingsFromFields();
+
+  const parts = getFileParts(selectedFileText);
+
+  const base = parts.replacementText.trimEnd();
+
+  const output =
+    (base ? base + '\n\n' : '') +
+    createSettingsBlock(settings);
+
+  try {
+    const writable = await selectedFileHandle.createWritable();
+
+    await writable.write(output);
+    await writable.close();
+
+    selectedFileText = output;
+    activeReplacementText = parts.replacementText;
+    activeFileSettings = settings;
+
+    alert('Remover settings saved successfully!');
+
+  } catch (error) {
+    alert('Unable to save settings: ' + error.message);
+  }
+}
+
+function toggleFileChoice() {
+  const choice = document.querySelector(
+    'input[name="fileChoice"]:checked'
+  ).value;
+
+  document.getElementById('existingFilePanel').style.display =
+    choice === 'existing' ? 'block' : 'none';
+
+  document.getElementById('newFilePanel').style.display =
+    choice === 'new' ? 'block' : 'none';
+}
+
+
+// =====================================
+// INITIALIZE
+// =====================================
+
+toggleFileChoice();
+toggleManagerMode();
+restoreFolderHandle();
 </script>
 
 </body>
