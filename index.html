@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Multilingual Text Replacer</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 
 <style>
 #replacementPairs {
@@ -422,11 +423,99 @@ button {
   gap: 4px;
 }
 
+/* Add Replacements in Tab 1 */
+.add-replacements-section textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.add-replacements-section button {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+/* Saved Replacements display */
+.saved-replacements-display {
+  white-space: pre-wrap;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  background: #eeeeee;
+  padding: 10px;
+  border-radius: 5px;
+  min-height: 100px;
+  margin-top: 10px;
+}
+
+/* Floating information icon */
+#removerIcon {
+  position: fixed;
+  right: 15px;
+  bottom: 15px;
+  z-index: 10000;
+  width: 42px;
+  height: 42px;
+  background: #0d47a1;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0.9;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Remover Settings alert panel */
+#removerPopup {
+  display: none;
+  position: fixed;
+  right: 15px;
+  bottom: 68px;
+  z-index: 9999;
+  width: calc(100% - 40px);
+  max-width: 360px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: #fff3cd;
+  border: 1px solid #e0c36b;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+}
+
+#removerPopup h3 {
+  margin-top: 0;
+}
+
+#removerPopup textarea,
+#removerPopup input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
+#removerPopup button {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
 </style>
 </head>
 
 <body>
+<div hidden>
+  <input type="radio" name="managerMode"
+    value="add" checked>
 
+  <input type="radio" name="managerMode"
+    value="edit">
+</div>
 <h2>Multilingual Text Replacer Tool</h2>
 
 <div class="tab-buttons">
@@ -449,6 +538,25 @@ button {
       <option value="">Choose a TXT file</option>
     </select>
   </div>
+
+<!-- ADD NEW REPLACEMENTS -->
+<div class="section yellow-section add-replacements-section">
+
+  <h3>Add New Replacements</h3>
+
+  <textarea id="newReplacements"
+    placeholder="Enter new replacements here, one entry per line.
+Example:
+夜扶桑= Ye Fusang
+謝棲棠= Xie Qitang"></textarea>
+
+  <button onclick="pasteReplacements()">Paste</button>
+
+  <button onclick="saveAddReplacements()">
+    Save Replacements
+  </button>
+
+</div>
 
   <div class="section yellow-section">
     <label for="contentInput">Enter the content:</label>
@@ -556,132 +664,71 @@ button {
   </div>
 </div>
 
-  <div class="manager-section blue-section">
-  <h3>Replacement Settings</h3>
 
-  <div class="radio-toggle-group">
-    <label>
-      <input type="radio" name="managerMode"
-        value="add" checked
-        onchange="toggleManagerMode()">
-      Add Replacements
-    </label>
-
-    <label>
-      <input type="radio" name="managerMode"
-        value="edit"
-        onchange="toggleManagerMode()">
-      Edit Replacements
-    </label>
-  </div>
-</div>
-
-
-  <!-- ADD MODE -->
-<div id="addModePanel" class="manager-section green-section">
-
-  <h3>Add New Replacements</h3>
-
-  <textarea id="newReplacements"
-    placeholder="Enter new replacements here, one entry per line.&#10;Example:&#10;夜扶桑= Ye Fusang&#10;謝棲棠= Xie Qitang"></textarea>
-
-  <button onclick="pasteReplacements()">Paste</button>
-
-  <button onclick="saveManagerFile()">Save Replacements</button>
+<!-- SAVED REPLACEMENTS -->
+<div class="manager-section green-section">
 
   <div class="replacement-heading">
-  <h3>Currently Saved Replacements</h3>
 
-  <div class="heading-controls">
-    <button class="resize-btn"
-      onclick="changeReplacementFontSize('addExistingEntries', 1)">+</button>
+    <h3>Saved Replacements</h3>
 
-    <button class="resize-btn"
-      onclick="changeReplacementFontSize('addExistingEntries', -1)">−</button>
+    <div class="heading-controls">
 
-    <button class="fullscreen-btn"
-      onclick="openReplacementFullscreen('addExistingEntries', 'Currently Saved Replacements')">
-      ⛶
-    </button>
+      <button class="resize-btn"
+        onclick="changeReplacementFontSize('addExistingEntries', 1)">+</button>
+
+      <button class="resize-btn"
+        onclick="changeReplacementFontSize('addExistingEntries', -1)">−</button>
+
+      <button class="fullscreen-btn"
+        onclick="openReplacementFullscreen('addExistingEntries', 'Saved Replacements')">
+        ⛶
+      </button>
+
+    </div>
   </div>
-</div>
 
-  <textarea id="addExistingEntries" readonly
-    placeholder="Existing replacements will appear here."></textarea>
-
-</div>
-
-<!-- EDIT MODE -->
-<div id="editModePanel" class="manager-section green-section">
-
-<div class="replacement-heading">
-  <h3>Edit All Replacements</h3>
-
-  <div class="heading-controls">
-    <button class="resize-btn"
-      onclick="changeReplacementFontSize('editEntries', 1)">+</button>
-
-    <button class="resize-btn"
-      onclick="changeReplacementFontSize('editEntries', -1)">−</button>
-
-    <button class="fullscreen-btn"
-      onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
-      ⛶
-    </button>
+  <div id="addExistingEntries" class="saved-replacements-display">
+    Select a replacement file to display its saved entries.
   </div>
+
+  <button id="editToggleButton"
+    onclick="toggleEditReplacements()">
+    Edit Replacements
+  </button>
+
+  <!-- EDIT REPLACEMENTS -->
+  <div id="editModePanel" style="display:none;">
+
+    <div class="replacement-heading">
+
+      <h3>Edit All Replacements</h3>
+
+      <div class="heading-controls">
+
+        <button class="resize-btn"
+          onclick="changeReplacementFontSize('editEntries', 1)">+</button>
+
+        <button class="resize-btn"
+          onclick="changeReplacementFontSize('editEntries', -1)">−</button>
+
+        <button class="fullscreen-btn"
+          onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
+          ⛶
+        </button>
+
+      </div>
+    </div>
+
+
 </div>
+
 
     <textarea id="editEntries"
       placeholder="The selected file's replacements will appear here."></textarea>
 
     <button onclick="saveManagerFile()">Save Changes</button>
   </div>
-<div class="manager-section yellow-section remover-settings-section collapsed">
-
-<button
-  type="button"
-  id="removerSettingsToggle"
-  onclick="toggleRemoverSettings()"
-  style="
-    float: right;
-    width: auto;
-    padding: 2px 6px;
-    margin: 0;
-    background: transparent;
-    color: black;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
-  ">▼</button>
-
-<h3>Remover Settings</h3>
-
-  <label class="manager-label" for="removerSeparator">
-    Separator:
-  </label>
-
-  <input id="removerSeparator"
-    value="!!"
-    placeholder="e.g. !!">
-
-  <label class="manager-label" for="headnoteRemover">
-    Headnote Remover:
-  </label>
-
-  <textarea id="headnoteRemover"
-    placeholder="Paste headnote triggers here"></textarea>
-
-  <label class="manager-label" for="footnoteRemover">
-    Footnote Remover:
-  </label>
-
-  <textarea id="footnoteRemover"
-    placeholder="Paste footnote triggers here"></textarea>
-	<button onclick="saveRemoverSettings()">
-  Save Settings
-</button>
-
-</div>
 
 
 </div>
@@ -707,6 +754,46 @@ button {
   </div>
 
   <textarea id="replacementFullscreenText" readonly></textarea>
+
+</div>
+
+<!-- FLOATING REMOVER SETTINGS BUTTON -->
+<div id="removerIcon"
+  onclick="toggleRemoverPopup()"
+  title="Remover Settings">
+  i
+</div>
+
+<!-- REMOVER SETTINGS POPUP -->
+<div id="removerPopup">
+
+  <h3>Remover Settings</h3>
+
+  <label class="manager-label" for="removerSeparator">
+    Separator:
+  </label>
+
+  <input id="removerSeparator"
+    value="!!"
+    placeholder="e.g. !!">
+
+  <label class="manager-label" for="headnoteRemover">
+    Headnote Remover:
+  </label>
+
+  <textarea id="headnoteRemover"
+    placeholder="Paste headnote triggers here"></textarea>
+
+  <label class="manager-label" for="footnoteRemover">
+    Footnote Remover:
+  </label>
+
+  <textarea id="footnoteRemover"
+    placeholder="Paste footnote triggers here"></textarea>
+
+  <button onclick="saveRemoverSettings()">
+    Save Settings
+  </button>
 
 </div>
 
@@ -814,17 +901,6 @@ function switchTab(number) {
   document.getElementById('tab2Button').classList.toggle('active', number === 2);
 }
 
-function toggleManagerMode() {
-  const mode = document.querySelector(
-    'input[name="managerMode"]:checked'
-  ).value;
-
-  document.getElementById('addModePanel').style.display =
-    mode === 'add' ? 'block' : 'none';
-
-  document.getElementById('editModePanel').style.display =
-    mode === 'edit' ? 'block' : 'none';
-}
 
 
 // =====================================
@@ -1063,8 +1139,8 @@ loadSettingsIntoFields(activeFileSettings);
   parseReplacementEntries(parts.replacementText)
 );
 
-    document.getElementById('addExistingEntries').value =
-      formatEntries(entries);
+document.getElementById('addExistingEntries').textContent =
+  formatEntries(entries);
 
     document.getElementById('editEntries').value =
   formatEntries(entries);
@@ -1132,7 +1208,7 @@ async function createNewFile() {
   'input[name="managerMode"][value="add"]'
 ).checked = true;
 
-    toggleManagerMode();
+   
 
     await refreshFileLists();
     await loadFileByName(name);
@@ -1233,6 +1309,8 @@ async function saveManagerFile() {
     const existing = parseReplacementEntries(
   getFileParts(selectedFileText).replacementText
 );
+
+
     const additions = parseReplacementEntries(
       document.getElementById('newReplacements').value
     );
@@ -1313,7 +1391,9 @@ if (parts.settings) {
   activeFileSettings = parts.settings;
 }
 
-    document.getElementById('addExistingEntries').value = replacementText;
+document.getElementById('addExistingEntries').textContent =
+  replacementText;
+
 document.getElementById('editEntries').value = replacementText;
 
     if (mode === 'add') {
@@ -1329,6 +1409,49 @@ document.getElementById('editEntries').value = replacementText;
   }
 }
 
+// =====================================
+// ADD AND EDIT REPLACEMENTS
+// =====================================
+
+function saveAddReplacements() {
+
+  document.querySelector(
+    'input[name="managerMode"][value="add"]'
+  ).checked = true;
+
+  saveManagerFile();
+}
+
+function saveEditedReplacements() {
+
+  document.querySelector(
+    'input[name="managerMode"][value="edit"]'
+  ).checked = true;
+
+  saveManagerFile();
+}
+
+function toggleEditReplacements() {
+
+  const panel = document.getElementById('editModePanel');
+
+  const button = document.getElementById('editToggleButton');
+
+  const opening = panel.style.display === 'none';
+
+  panel.style.display = opening ? 'block' : 'none';
+
+  button.textContent = opening
+    ? 'Close Editor'
+    : 'Edit Replacements';
+}
+
+function pasteReplacements() {
+  navigator.clipboard.readText().then(text => {
+    document.getElementById('newReplacements').value = text;
+    showNotification('Replacements pasted successfully!');
+  });
+}
 
 // =====================================
 // ORIGINAL TEXT REPLACER FUNCTIONS
@@ -1599,7 +1722,9 @@ function openReplacementFullscreen(sourceId, title) {
   document.getElementById('fullscreenTitle').textContent =
     title;
 
-  display.value = source.value;
+  display.value = 'value' in source
+  ? source.value
+  : source.textContent;
 
   fullscreenFontSize = 16;
   display.style.fontSize = fullscreenFontSize + 'px';
@@ -1651,7 +1776,6 @@ function changeReplacementFontSize(sourceId, change) {
 // =====================================
 
 toggleFileChoice();
-toggleManagerMode();
 restoreFolderHandle();
 </script>
 
