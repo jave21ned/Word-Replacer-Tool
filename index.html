@@ -580,10 +580,20 @@ button {
   margin-top: 8px;
 }
 
-/* Position remover settings popup beside floating icons */
+/* Mobile-friendly Remover Settings popup */
 #removerPopup {
+  left: auto;
   right: 68px;
   bottom: 15px;
+
+  width: calc(100vw - 96px);
+  max-width: 360px;
+
+  max-height: calc(100vh - 30px);
+  max-height: calc(100dvh - 30px);
+
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 </style>
@@ -731,8 +741,18 @@ button {
         </div>
       </div>
 
-      <textarea id="editEntries"
-        placeholder="The selected file's replacements will appear here."></textarea>
+      <input
+  type="search"
+  id="editReplacementSearch"
+  placeholder="Search replacements to edit..."
+  oninput="searchEditReplacement(false)"
+  onkeydown="if(event.key === 'Enter') {
+    event.preventDefault();
+    searchEditReplacement(true);
+  }">
+
+<textarea id="editEntries"
+  placeholder="The selected file's replacements will appear here."></textarea>
 
       <button onclick="saveEditedReplacements()">
         Save Changes
@@ -931,6 +951,7 @@ let selectedFileHandle = null;
 let selectedFileName = '';
 let selectedFileText = '';
 let activeReplacementText = '';
+let lastSaveSucceeded = false;
 
 let activeFileSettings = {
   separator: '!!',
@@ -1462,6 +1483,8 @@ function renderSavedReplacements() {
 // =====================================
 
 async function saveManagerFile() {
+
+  lastSaveSucceeded = false;
   if (!selectedFileHandle) {
     alert('Please select or create a TXT file first.');
     return;
@@ -1601,6 +1624,10 @@ document.getElementById('editEntries').value = replacementText;
 
     alert('Replacements saved and sorted successfully.');
 
+await refreshFileLists();
+
+lastSaveSucceeded = true;
+
     await refreshFileLists();
 
   } catch (error) {
@@ -1612,13 +1639,17 @@ document.getElementById('editEntries').value = replacementText;
 // ADD AND EDIT REPLACEMENTS
 // =====================================
 
-function saveAddReplacements() {
+async function saveAddReplacements() {
 
   document.querySelector(
     'input[name="managerMode"][value="add"]'
   ).checked = true;
 
-  saveManagerFile();
+  await saveManagerFile();
+
+  if (lastSaveSucceeded) {
+    closeFloatingPopups();
+  }
 }
 
 function saveEditedReplacements() {
@@ -1645,6 +1676,62 @@ function toggleEditReplacements() {
     : 'Edit Replacements';
 }
 
+// =====================================
+// SEARCH EDIT REPLACEMENTS
+// =====================================
+
+function searchEditReplacement(findNext = false) {
+
+  const search = document.getElementById(
+    'editReplacementSearch'
+  ).value.trim().toLowerCase();
+
+  const textarea = document.getElementById('editEntries');
+
+  const text = textarea.value;
+
+  if (!search) {
+    textarea.setSelectionRange(0, 0);
+    textarea.scrollTop = 0;
+    return;
+  }
+
+  const lowerText = text.toLowerCase();
+
+  let start = findNext
+    ? textarea.selectionEnd
+    : 0;
+
+  let index = lowerText.indexOf(search, start);
+
+  // Restart search when no more matches exist
+  if (index === -1 && findNext) {
+    index = lowerText.indexOf(search, 0);
+  }
+
+  if (index === -1) {
+    showNotification('No matching replacement found.');
+    return;
+  }
+
+  // Highlight the matching text
+  textarea.setSelectionRange(
+    index,
+    index + search.length
+  );
+
+  // Scroll to the matching entry
+  const lineNumber = text
+    .substring(0, index)
+    .split('\n').length - 1;
+
+  const lineHeight =
+    parseFloat(getComputedStyle(textarea).lineHeight) || 32;
+
+  textarea.scrollTop = lineNumber * lineHeight;
+
+}
+
 function pasteReplacements() {
   navigator.clipboard.readText().then(text => {
     document.getElementById('newReplacements').value = text;
@@ -1663,7 +1750,7 @@ function pasteContent() {
   });
 }
 
-function toggleFloatingPopup(popupId) {
+function closeFloatingPopups() {
 
   const popups = [
     'folderPopup',
@@ -1672,17 +1759,25 @@ function toggleFloatingPopup(popupId) {
     'removerPopup'
   ];
 
-  const target = document.getElementById(popupId);
-  const opening = target.style.display !== 'block';
-
   popups.forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
+}
+
+
+function toggleFloatingPopup(popupId) {
+
+  const target = document.getElementById(popupId);
+
+  const opening = target.style.display !== 'block';
+
+  closeFloatingPopups();
 
   if (opening) {
     target.style.display = 'block';
   }
 }
+
 
 function toggleRemoverPopup() {
   toggleFloatingPopup('removerPopup');
@@ -1988,6 +2083,29 @@ function changeReplacementFontSize(sourceId, change) {
 
   source.style.fontSize = newSize + 'px';
 }
+
+// =====================================
+// CLOSE POPUPS WHEN CLICKING OUTSIDE
+// =====================================
+
+document.addEventListener('click', function(event) {
+
+  // Ignore clicks inside any popup
+  if (event.target.closest('.floating-popup')) {
+    return;
+  }
+
+  // Ignore clicks on floating icons
+  if (
+    event.target.closest('.floating-tool-icon') ||
+    event.target.closest('#removerIcon')
+  ) {
+    return;
+  }
+
+  closeFloatingPopups();
+
+});
 
 // =====================================
 // INITIALIZE
