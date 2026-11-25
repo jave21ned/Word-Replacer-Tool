@@ -7,6 +7,29 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
 <style>
+
+#backToTopBtn {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 18px;
+  z-index: 999;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(36, 91, 158, 0.45);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: background 0.2s;
+}
+
+#backToTopBtn:hover {
+  background: rgba(23, 68, 119, 0.7);
+}
+
 #replacementPairs {
   width: 100%;
   box-sizing: border-box;
@@ -385,10 +408,6 @@ button {
 }
 
 /* Add Replacements in Tab 1 */
-#addPopup textarea {
-  width: 100%;
-  box-sizing: border-box;
-}
 
 #addPopup button {
   width: 100%;
@@ -477,23 +496,87 @@ button {
   border-bottom: none;
 }
 
-/* Divider lines inside editable textareas */
-#addPopup textarea,
-#editEntries {
+/* Add Replacements editor */
+.add-entries-editor {
+  width: 100%;
+  min-height: 160px;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  overflow-y: auto;
+}
+
+.add-entry-row {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 0;
+}
+
+.add-entry-row:not(:last-child) {
+  border-bottom: 1px solid black;
+}
+
+.add-entry-row textarea {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  font-family: Arial, sans-serif;
+  font-size: inherit;
   line-height: 32px;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* Edit Replacements editor */
+.edit-entries-editor {
+  width: 100%;
+  min-height: 160px;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  overflow-y: auto;
+}
 
-  background-image: linear-gradient(
-    to bottom,
-    transparent 31px,
-    black 31px,
-    black 32px,
-    transparent 32px
-  );
+.edit-entry-row {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 0;
+}
 
-  background-size: 100% 32px;
-  background-attachment: local;
+.edit-entry-row:not(:last-child) {
+  border-bottom: 1px solid black;
+}
+
+.edit-entry-row textarea {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  font-family: Arial, sans-serif;
+  font-size: inherit;
+  line-height: 32px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Floating tool icons */
@@ -747,8 +830,7 @@ button {
   placeholder="Search replacements to edit..."
   oninput="searchEditReplacement()">
 
-<textarea id="editEntries"
-  placeholder="The selected file's replacements will appear here."></textarea>
+<div id="editEntries" class="edit-entries-editor"></div>	
 
       <button onclick="saveEditedReplacements()">
         Save Changes
@@ -880,11 +962,7 @@ button {
 
   <h3>Add New Replacements</h3>
 
-  <textarea id="newReplacements"
-    placeholder="Enter new replacements here, one entry per line.
-Example:
-夜扶桑= Ye Fusang
-謝棲棠= Xie Qitang"></textarea>
+  <div id="addEntries" class="add-entries-editor"></div>
 
   <button onclick="pasteReplacements()">
     Paste
@@ -940,6 +1018,10 @@ Example:
 
 </div>
 
+<button id="backToTopBtn" title="Back to top" aria-label="Back to top">
+  ↑
+</button>
+
 <script>
   
 let folderHandle = null;
@@ -948,7 +1030,8 @@ let selectedFileName = '';
 let selectedFileText = '';
 let activeReplacementText = '';
 let editWorkingEntries = [];
-let editVisibleKeys = [];
+let editVisibleIds = [];
+let nextEditEntryId = 1;
 let lastSaveSucceeded = false;
 
 let activeFileSettings = {
@@ -1045,6 +1128,8 @@ function switchTab(number) {
 
   document.getElementById('tab1Button').classList.toggle('active', number === 1);
   document.getElementById('tab2Button').classList.toggle('active', number === 2);
+
+  updateBackToTopVisibility();
 }
 
 
@@ -1278,14 +1363,16 @@ const entries = sortEntries(
     .filter(entry => !entry.invalid)
 );
 
-    editWorkingEntries = [...entries];
+    editWorkingEntries = entries.map(entry => ({
+  ...entry,
+  editId: nextEditEntryId++
+}));
 
-editVisibleKeys = entries.map(entry => entry.key);
-
-document.getElementById('editEntries').value =
-  formatEntries(entries);
+editVisibleIds = editWorkingEntries.map(entry => entry.editId);
 
 document.getElementById('editReplacementSearch').value = '';
+
+renderEditReplacementSearch();
 
   } catch (error) {
     alert('Unable to load file: ' + error.message);
@@ -1361,7 +1448,7 @@ document.querySelector(
 
 toggleFileChoice();
 
-    document.getElementById('newReplacements').value = '';
+    renderAddEntries();
 
     alert('New TXT file created successfully.');
 
@@ -1509,8 +1596,8 @@ if (mode === 'add') {
   ).filter(entry => !entry.invalid);
 
   const additions = parseReplacementEntries(
-    document.getElementById('newReplacements').value
-  );
+  getAddEntriesText()
+);
 
   invalidEntries = additions.filter(entry => entry.invalid);
 
@@ -1622,13 +1709,16 @@ if (parts.settings) {
 
 renderSavedReplacements();
 
-editWorkingEntries = [...entries];
+editWorkingEntries = entries.map(entry => ({
+  ...entry,
+  editId: nextEditEntryId++
+}));
 
 renderEditReplacementSearch();
 
     if (mode === 'add') {
-      document.getElementById('newReplacements').value = '';
-    }
+  renderAddEntries();
+}
 
     alert('Replacements saved and sorted successfully.');
 
@@ -1682,6 +1772,48 @@ function toggleEditReplacements() {
     : 'Edit Replacements';
 }
 
+function renderAddEntries(text = '') {
+  const container = document.getElementById('addEntries');
+
+  container.innerHTML = '';
+
+  const entries = text
+    ? text.split(/\r?\n|!!/)
+    : [''];
+
+  entries.forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'add-entry-row';
+
+    const textarea = document.createElement('textarea');
+    textarea.value = entry;
+    textarea.rows = 1;
+    textarea.spellcheck = false;
+
+    function adjustHeight() {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    textarea.addEventListener('input', adjustHeight);
+
+    row.appendChild(textarea);
+    container.appendChild(row);
+
+    adjustHeight();
+  });
+}
+
+function getAddEntriesText() {
+  const textareas = document.querySelectorAll(
+    '#addEntries .add-entry-row textarea'
+  );
+
+  return Array.from(textareas)
+    .map(textarea => textarea.value)
+    .join('\n');
+}
+
 // =====================================
 // SEARCH EDIT REPLACEMENTS
 // =====================================
@@ -1690,12 +1822,20 @@ function toggleEditReplacements() {
 // SYNC VISIBLE EDIT ENTRIES
 // =====================================
 
+function getEditEntriesText() {
+  const textareas = document.querySelectorAll(
+    '#editEntries .edit-entry-row textarea'
+  );
+
+  return Array.from(textareas)
+    .map(textarea => textarea.value)
+    .join('\n');
+}
+
 function syncVisibleEditEntries() {
 
-  const textarea = document.getElementById('editEntries');
-
   const editedEntries = parseReplacementEntries(
-    textarea.value
+    getEditEntriesText()
   );
 
   const invalidEntries = editedEntries.filter(
@@ -1712,18 +1852,25 @@ function syncVisibleEditEntries() {
     return false;
   }
 
-  const visibleKeys = new Set(editVisibleKeys);
+  if (editedEntries.length !== editVisibleIds.length) {
+    alert('The number of edited entries does not match. Please check your entries.');
+    return false;
+  }
 
-  // Keep all hidden entries untouched
-  const hiddenEntries = editWorkingEntries.filter(
-    entry => !visibleKeys.has(entry.key)
+  const editedById = new Map();
+
+  editedEntries.forEach((entry, index) => {
+    editedById.set(editVisibleIds[index], {
+      ...entry,
+      editId: editVisibleIds[index]
+    });
+  });
+
+  editWorkingEntries = editWorkingEntries.map(entry =>
+    editedById.get(entry.editId) || entry
   );
 
-  // Replace only the currently visible entries
-  editWorkingEntries = sortEntries([
-    ...hiddenEntries,
-    ...editedEntries
-  ]);
+  editWorkingEntries = sortEntries(editWorkingEntries);
 
   return true;
 }
@@ -1747,12 +1894,38 @@ function renderEditReplacementSearch() {
 
   });
 
-  editVisibleKeys = filteredEntries.map(
-    entry => entry.key
+  editVisibleIds = filteredEntries.map(
+    entry => entry.editId
   );
 
-  document.getElementById('editEntries').value =
-    formatEntries(filteredEntries);
+  const container = document.getElementById('editEntries');
+
+  container.innerHTML = '';
+
+  filteredEntries.forEach(entry => {
+
+    const row = document.createElement('div');
+    row.className = 'edit-entry-row';
+
+    const textarea = document.createElement('textarea');
+
+    textarea.value = entry.key + '=' + entry.value;
+    textarea.rows = 1;
+    textarea.spellcheck = false;
+
+    function adjustHeight() {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    textarea.addEventListener('input', adjustHeight);
+
+    row.appendChild(textarea);
+    container.appendChild(row);
+
+    adjustHeight();
+
+  });
 }
 
 
@@ -1773,7 +1946,7 @@ function searchEditReplacement() {
 
 function pasteReplacements() {
   navigator.clipboard.readText().then(text => {
-    document.getElementById('newReplacements').value = text;
+    renderAddEntries(text);
     showNotification('Replacements pasted successfully!');
   });
 }
@@ -2074,9 +2247,11 @@ function openReplacementFullscreen(sourceId, title) {
   document.getElementById('fullscreenTitle').textContent =
     title;
 
-  display.value = 'value' in source
-  ? source.value
-  : source.textContent;
+display.value = sourceId === 'editEntries'
+  ? getEditEntriesText()
+  : ('value' in source
+      ? source.value
+      : source.textContent);
 
   fullscreenFontSize = 16;
   display.style.fontSize = fullscreenFontSize + 'px';
@@ -2149,11 +2324,36 @@ document.addEventListener('click', function(event) {
 
 });
 
+//Back to the top
+const backToTopBtn = document.getElementById('backToTopBtn');
+
+function updateBackToTopVisibility() {
+  const tab2 = document.getElementById('tab2');
+
+  const isTab2Active =
+  tab2 && tab2.classList.contains('active');
+
+  backToTopBtn.style.display =
+    isTab2Active && window.scrollY > 300 ? 'block' : 'none';
+}
+
+window.addEventListener('scroll', updateBackToTopVisibility);
+
+backToTopBtn.addEventListener('click', function() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+});
+
+// Keep button visibility synchronized with the active tab and scroll position
+
 // =====================================
 // INITIALIZE
 // =====================================
 
 toggleFileChoice();
+updateBackToTopVisibility();
 restoreFolderHandle();
 </script>
 
