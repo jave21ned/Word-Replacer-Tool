@@ -8,25 +8,35 @@
 
 <style>
 
-#backToTopBtn {
-  display: none;
+#backToTopContainer {
   position: fixed;
   bottom: 20px;
   left: 18px;
   z-index: 999;
+  display: none; /* Hidden by default */
+  flex-direction: column;
+  gap: 8px;
+}
+
+#scrollTopBtn,
+#scrollBottomBtn {
   width: 44px;
   height: 44px;
   border: none;
   border-radius: 50%;
   background: rgba(36, 91, 158, 0.45);
   color: rgba(255, 255, 255, 0.85);
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-#backToTopBtn:hover {
+#scrollTopBtn:hover,
+#scrollBottomBtn:hover {
   background: rgba(23, 68, 119, 0.7);
 }
 
@@ -476,7 +486,7 @@ line-height: 1;
   padding: 10px;
   border-radius: 5px;
   min-height: 100px;
-  margin-top: 10px;
+  margin-top: 5px;
 }
 
 /* Floating information icon */
@@ -594,7 +604,7 @@ line-height: 1;
   width: 100%;
   min-height: 160px;
   box-sizing: border-box;
-  margin-top: 6px;
+  margin-top: 5px;
   padding: 6px 10px;
   background: white;
   border: 1px solid #aaa;
@@ -734,6 +744,57 @@ line-height: 1;
 
   overflow-y: auto;
   box-sizing: border-box;
+}
+
+/* Standardize font and text layout for both boxes */
+#addExistingEntries.saved-replacements-display,
+#editEntries.edit-entries-editor {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  font-family: Arial, sans-serif !important;
+}
+
+/* Also standardize text inside individual rows/entries */
+#addExistingEntries .replacement-entry,
+#editEntries .edit-entry-row textarea {
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-family: inherit !important;
+}
+
+/* Give Saved Replacements the same border as Edit mode */
+#addExistingEntries.saved-replacements-display {
+  border: 1px solid #aaa !important;
+  border-radius: 4px !important;
+}
+/* Match top padding inside both boxes */
+#addExistingEntries.saved-replacements-display {
+  padding-top: 10px !important;
+}
+
+#editEntries.edit-entries-editor {
+  padding-top: 10px !important;
+  margin-bottom: 36px;
+}
+
+/* Make the edit section container the scrollable parent */
+.manager-section.green-section {
+  overflow-y: auto !important;
+  position: relative !important;
+}
+
+/* Save Changes button — fixed floating, centered, always visible */
+button[onclick="saveEditedReplacements()"] {
+  position: fixed !important;
+  bottom: 30px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  min-width: 200px !important;
+  max-width: 90% !important;
+  z-index: 9999 !important;
+  margin: 0 !important;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25) !important;
 }
 
 </style>
@@ -1098,9 +1159,10 @@ line-height: 1;
 
 </div>
 
-<button id="backToTopBtn" title="Back to top" aria-label="Back to top">
-  ↑
-</button>
+<div id="backToTopContainer">
+  <button id="scrollTopBtn" title="Back to Top" aria-label="Back to Top">↑</button>
+  <button id="scrollBottomBtn" title="Go to Bottom" aria-label="Go to Bottom">↓</button>
+</div>
 
 <script>
   
@@ -2438,36 +2500,90 @@ document.addEventListener('click', function(event) {
   closeFloatingPopups();
 
 });
+// =====================================
+// SCROLL BUTTONS — Show only on scroll
+// =====================================
 
-//Back to the top
-const backToTopBtn = document.getElementById('backToTopBtn');
+const backToTopContainer = document.getElementById('backToTopContainer');
+const scrollTopBtn = document.getElementById('scrollTopBtn');
+const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+let scrollHideTimeout;
+let isContainerVisible = false;
 
-function updateScrollButton() {
-  if (window.scrollY <= 10) {
-    backToTopBtn.textContent = '↓';
-    backToTopBtn.title = 'Go to Bottom';
+// Show buttons when scrolling starts
+function showScrollButtons() {
+  // Only show if on Tab 2
+  const tab2Active = document.getElementById('tab2').classList.contains('active');
+  if (!tab2Active) return;
+
+  if (!isContainerVisible) {
+    backToTopContainer.style.display = 'flex';
+    isContainerVisible = true;
+  }
+  
+  // Reset hide timer
+  clearTimeout(scrollHideTimeout);
+  
+  // Hide 1.5s after scrolling stops
+  scrollHideTimeout = setTimeout(() => {
+    backToTopContainer.style.display = 'none';
+    isContainerVisible = false;
+  }, 1500);
+  
+  updateScrollButtonVisibility();
+}
+
+// Update which arrows are visible based on scroll position
+function updateScrollButtonVisibility() {
+  const scrollTop = window.scrollY;
+  const scrollBottom = scrollTop + window.innerHeight;
+  const pageHeight = document.documentElement.scrollHeight;
+  const atTop = scrollTop <= 5;
+  const atBottom = scrollBottom >= pageHeight - 5;
+
+  if (atTop) {
+    // At very top — only show Down arrow
+    scrollTopBtn.style.opacity = '0';
+    scrollTopBtn.style.pointerEvents = 'none';
+    scrollBottomBtn.style.opacity = '1';
+    scrollBottomBtn.style.pointerEvents = 'auto';
+  } else if (atBottom) {
+    // At very bottom — only show Up arrow
+    scrollTopBtn.style.opacity = '1';
+    scrollTopBtn.style.pointerEvents = 'auto';
+    scrollBottomBtn.style.opacity = '0';
+    scrollBottomBtn.style.pointerEvents = 'none';
   } else {
-    backToTopBtn.textContent = '↑';
-    backToTopBtn.title = 'Go to Top';
+    // Middle of page — show both arrows
+    scrollTopBtn.style.opacity = '1';
+    scrollTopBtn.style.pointerEvents = 'auto';
+    scrollBottomBtn.style.opacity = '1';
+    scrollBottomBtn.style.pointerEvents = 'auto';
   }
 }
 
-backToTopBtn.addEventListener('click', () => {
-  if (window.scrollY <= 10) {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
-    });
-  } else {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+// Tab visibility control
+function updateBackToTopVisibility() {
+  const tab2Active = document.getElementById('tab2').classList.contains('active');
+  if (!tab2Active) {
+    backToTopContainer.style.display = 'none';
+    isContainerVisible = false;
+    clearTimeout(scrollHideTimeout);
   }
+}
+
+// Scroll events
+window.addEventListener('scroll', showScrollButtons);
+
+// Button clicks
+scrollTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-window.addEventListener('scroll', updateScrollButton);
-window.addEventListener('load', updateScrollButton);
+scrollBottomBtn.addEventListener('click', () => {
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+});
+
 
 // Keep button visibility synchronized with the active tab and scroll position
 
