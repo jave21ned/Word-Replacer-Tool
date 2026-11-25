@@ -409,6 +409,30 @@ button {
   margin: 0;
 }
 
+.manager-section .replacement-heading .edit-mode-btn {
+  width: 34px;
+  min-width: 34px;
+  flex: 0 0 34px;
+  height: 30px;
+  padding: 0;
+  margin: 0;
+  background: #0d47a1;
+  border-radius: 5px;
+  font-size: 20px;
+
+display: inline-flex;
+align-items: center;
+justify-content: center;
+vertical-align: middle;
+line-height: 1;
+}
+
+.edit-mode-btn svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
 /* Add spacing above the replacement heading controls */
 .replacement-heading {
   margin-top: 15px;
@@ -797,42 +821,48 @@ button {
 
   <!-- SAVED REPLACEMENTS -->
   <div class="manager-section green-section">
+<div id="savedViewPanel">
 
-    <div class="replacement-heading">
+  <div class="replacement-heading">
 
-      <h3>Saved Replacements</h3>
+    <h3>Saved Replacements</h3>
 
-      <div class="heading-controls">
+    <div class="heading-controls">
 
-        <button class="resize-btn"
-          onclick="changeReplacementFontSize('addExistingEntries', 1)">+</button>
+      <button class="resize-btn"
+        onclick="changeReplacementFontSize('addExistingEntries', 1)">+</button>
 
-        <button class="resize-btn"
-          onclick="changeReplacementFontSize('addExistingEntries', -1)">−</button>
+      <button class="resize-btn"
+        onclick="changeReplacementFontSize('addExistingEntries', -1)">−</button>
 
-        <button class="fullscreen-btn"
-          onclick="openReplacementFullscreen('addExistingEntries', 'Saved Replacements')">
-          ⛶
-        </button>
+      <button class="fullscreen-btn"
+        onclick="openReplacementFullscreen('addExistingEntries', 'Saved Replacements')">
+        ⛶
+      </button>
 
-      </div>
+      <button class="edit-mode-btn"
+        onclick="toggleEditReplacements()"
+        title="Edit Replacements"
+        aria-label="Edit Replacements">
+        ✎
+      </button>
+
     </div>
+  </div>
 
-    <input
-      type="search"
-      id="savedReplacementSearch"
-      placeholder="Search saved replacements..."
-      oninput="renderSavedReplacements()">
+  <input
+    type="search"
+    id="savedReplacementSearch"
+    placeholder="Search saved replacements..."
+    oninput="renderSavedReplacements()">
 
-    <div id="addExistingEntries"
-      class="saved-replacements-display">
-      Select a replacement file to display its saved entries.
-    </div>
+  <div id="addExistingEntries"
+    class="saved-replacements-display">
+    Select a replacement file to display its saved entries.
+  </div>
+</div> <!-- Close savedViewPanel -->
 
-    <button id="editToggleButton"
-      onclick="toggleEditReplacements()">
-      Edit Replacements
-    </button>
+
 
     <!-- EDIT REPLACEMENTS -->
     <div id="editModePanel" style="display:none;">
@@ -853,6 +883,23 @@ button {
             onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
             ⛶
           </button>
+	<button class="edit-mode-btn"
+  onclick="toggleEditReplacements()"
+  title="Return to View Mode"
+  aria-label="Return to View Mode">
+  <svg viewBox="0 0 24 24"
+    width="20" height="20"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round">
+    <path d="M12 7v14"/>
+    <path d="M3 18V5a2 2 0 0 1 2-2h4a3 3 0 0 1 3 3 3 3 0 0 1 3-3h4a2 2 0 0 1 2 2v13"/>
+    <path d="M3 18a2 2 0 0 0 2 2h4a3 3 0 0 1 3 3"/>
+    <path d="M21 18a2 2 0 0 1-2 2h-4a3 3 0 0 0-3 3"/>
+  </svg>
+</button>
 
         </div>
       </div>
@@ -1797,20 +1844,18 @@ function saveEditedReplacements() {
 function toggleEditReplacements() {
 
   const panel = document.getElementById('editModePanel');
-
-  const button = document.getElementById('editToggleButton');
+  const viewPanel = document.getElementById('savedViewPanel');
 
   const opening = panel.style.display === 'none';
 
   panel.style.display = opening ? 'block' : 'none';
+  viewPanel.style.display = opening ? 'none' : 'block';
 
-  button.textContent = opening
-    ? 'Close Editor'
-    : 'Edit Replacements';
-
-  requestAnimationFrame(() => {
-    adjustEditEntryHeights();
-  });
+  if (opening) {
+    requestAnimationFrame(() => {
+      adjustEditEntryHeights();
+    });
+  }
 }
 
 function renderAddEntries(text = '') {
@@ -2397,27 +2442,32 @@ document.addEventListener('click', function(event) {
 //Back to the top
 const backToTopBtn = document.getElementById('backToTopBtn');
 
-function updateBackToTopVisibility() {
-  const tab2 = document.getElementById('tab2');
-
-  const isTab2Active =
-  tab2 && tab2.classList.contains('active');
-
-  backToTopBtn.style.display =
-    isTab2Active && window.scrollY > 300 ? 'block' : 'none';
+function updateScrollButton() {
+  if (window.scrollY <= 10) {
+    backToTopBtn.textContent = '↓';
+    backToTopBtn.title = 'Go to Bottom';
+  } else {
+    backToTopBtn.textContent = '↑';
+    backToTopBtn.title = 'Go to Top';
+  }
 }
 
-window.addEventListener('scroll', updateBackToTopVisibility);
-window.addEventListener('resize', () => {
-  adjustEditEntryHeights();
+backToTopBtn.addEventListener('click', () => {
+  if (window.scrollY <= 10) {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
+  } else {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
 });
 
-backToTopBtn.addEventListener('click', function() {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
-});
+window.addEventListener('scroll', updateScrollButton);
+window.addEventListener('load', updateScrollButton);
 
 // Keep button visibility synchronized with the active tab and scroll position
 
