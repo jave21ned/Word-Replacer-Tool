@@ -658,6 +658,10 @@ button {
   min-height: 160px;
 }
 
+#addPopup .add-entry-row textarea {
+  min-height: 32px;
+}
+
 #addPopup button,
 #folderPopup button {
   width: 100%;
@@ -2354,6 +2358,8 @@ backToTopBtn.addEventListener('click', function() {
 // INITIALIZE
 // =====================================
 
+
+renderAddEntries(); // Create an empty editable textarea immediately
 toggleFileChoice();
 updateBackToTopVisibility();
 restoreFolderHandle();
