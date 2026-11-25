@@ -745,11 +745,7 @@ button {
   type="search"
   id="editReplacementSearch"
   placeholder="Search replacements to edit..."
-  oninput="searchEditReplacement(false)"
-  onkeydown="if(event.key === 'Enter') {
-    event.preventDefault();
-    searchEditReplacement(true);
-  }">
+  oninput="searchEditReplacement()">
 
 <textarea id="editEntries"
   placeholder="The selected file's replacements will appear here."></textarea>
@@ -951,6 +947,8 @@ let selectedFileHandle = null;
 let selectedFileName = '';
 let selectedFileText = '';
 let activeReplacementText = '';
+let editWorkingEntries = [];
+let editVisibleKeys = [];
 let lastSaveSucceeded = false;
 
 let activeFileSettings = {
@@ -1280,8 +1278,14 @@ const entries = sortEntries(
     .filter(entry => !entry.invalid)
 );
 
-    document.getElementById('editEntries').value =
+    editWorkingEntries = [...entries];
+
+editVisibleKeys = entries.map(entry => entry.key);
+
+document.getElementById('editEntries').value =
   formatEntries(entries);
+
+document.getElementById('editReplacementSearch').value = '';
 
   } catch (error) {
     alert('Unable to load file: ' + error.message);
@@ -1497,88 +1501,90 @@ async function saveManagerFile() {
   let entries = [];
   let invalidEntries = [];
 
-  if (mode === 'add') {
+  
+if (mode === 'add') {
 
-    const existing = parseReplacementEntries(
-  getFileParts(selectedFileText).replacementText
-).filter(entry => !entry.invalid);
+  const existing = parseReplacementEntries(
+    getFileParts(selectedFileText).replacementText
+  ).filter(entry => !entry.invalid);
 
-    const additions = parseReplacementEntries(
-      document.getElementById('newReplacements').value
+  const additions = parseReplacementEntries(
+    document.getElementById('newReplacements').value
+  );
+
+  invalidEntries = additions.filter(entry => entry.invalid);
+
+  if (invalidEntries.length > 0) {
+    alert(
+      'Invalid entries found:\n\n' +
+      invalidEntries.map(entry => entry.invalid).join('\n') +
+      '\n\nPlease correct them before saving.'
     );
-
-    invalidEntries = additions.filter(entry => entry.invalid);
-
-    if (invalidEntries.length > 0) {
-      alert(
-        'Invalid entries found:\n\n' +
-        invalidEntries.map(entry => entry.invalid).join('\n') +
-        '\n\nPlease correct them before saving.'
-      );
-      return;
-    }
-
-    entries = existing.filter(entry => !entry.invalid);
-
-    const existingKeys = new Set(
-      existing.map(entry => entry.key)
-    );
-
-    let addedCount = 0;
-    let duplicateCount = 0;
-
-    additions.forEach(entry => {
-      if (existingKeys.has(entry.key)) {
-        duplicateCount++;
-      } else {
-        entries.push(entry);
-        existingKeys.add(entry.key);
-        addedCount++;
-      }
-    });
-
-    if (addedCount === 0) {
-      alert(
-        duplicateCount > 0
-          ? 'No new entries added. All submitted Chinese terms already exist.'
-          : 'Please enter valid replacement entries.'
-      );
-      return;
-    }
-
-  } else {
-
-    const editedEntries = parseReplacementEntries(
-      document.getElementById('editEntries').value
-    );
-
-    invalidEntries = editedEntries.filter(entry => entry.invalid);
-
-    if (invalidEntries.length > 0) {
-      alert(
-        'Invalid entries found:\n\n' +
-        invalidEntries.map(entry => entry.invalid).join('\n') +
-        '\n\nPlease correct them before saving.'
-      );
-      return;
-    }
-
-    entries = editedEntries;
-
-    const keys = new Set();
-
-    for (const entry of entries) {
-      if (keys.has(entry.key)) {
-        alert(
-          'Duplicate Chinese term found: ' + entry.key +
-          '\nPlease remove the duplicate before saving.'
-        );
-        return;
-      }
-
-      keys.add(entry.key);
-    }
+    return;
   }
+
+  entries = [...existing];
+
+  const existingKeys = new Set(
+    existing.map(entry => entry.key)
+  );
+
+  let addedCount = 0;
+  let duplicateCount = 0;
+
+  additions.forEach(entry => {
+    if (existingKeys.has(entry.key)) {
+      duplicateCount++;
+    } else {
+      entries.push(entry);
+      existingKeys.add(entry.key);
+      addedCount++;
+    }
+  });
+
+  if (addedCount === 0) {
+    alert(
+      duplicateCount > 0
+        ? 'No new entries added. All submitted Chinese terms already exist.'
+        : 'Please enter valid replacement entries.'
+    );
+    return;
+  }
+
+} else {
+
+  if (!syncVisibleEditEntries()) {
+    return;
+  }
+
+  entries = [...editWorkingEntries];
+
+  invalidEntries = entries.filter(entry => entry.invalid);
+
+  if (invalidEntries.length > 0) {
+    alert(
+      'Invalid entries found:\n\n' +
+      invalidEntries.map(entry => entry.invalid).join('\n') +
+      '\n\nPlease correct them before saving.'
+    );
+    return;
+  }
+
+  const keys = new Set();
+
+  for (const entry of entries) {
+    if (keys.has(entry.key)) {
+      alert(
+        'Duplicate Chinese term found: ' + entry.key +
+        '\nPlease remove the duplicate before saving.'
+      );
+      return;
+    }
+
+    keys.add(entry.key);
+  }
+}
+
 
   if (entries.length === 0) {
     alert('There are no valid replacement entries to save.');
@@ -1616,7 +1622,9 @@ if (parts.settings) {
 
 renderSavedReplacements();
 
-document.getElementById('editEntries').value = replacementText;
+editWorkingEntries = [...entries];
+
+renderEditReplacementSearch();
 
     if (mode === 'add') {
       document.getElementById('newReplacements').value = '';
@@ -1627,8 +1635,6 @@ document.getElementById('editEntries').value = replacementText;
 await refreshFileLists();
 
 lastSaveSucceeded = true;
-
-    await refreshFileLists();
 
   } catch (error) {
     alert('Unable to save file: ' + error.message);
@@ -1680,56 +1686,89 @@ function toggleEditReplacements() {
 // SEARCH EDIT REPLACEMENTS
 // =====================================
 
-function searchEditReplacement(findNext = false) {
+// =====================================
+// SYNC VISIBLE EDIT ENTRIES
+// =====================================
+
+function syncVisibleEditEntries() {
+
+  const textarea = document.getElementById('editEntries');
+
+  const editedEntries = parseReplacementEntries(
+    textarea.value
+  );
+
+  const invalidEntries = editedEntries.filter(
+    entry => entry.invalid
+  );
+
+  if (invalidEntries.length > 0) {
+    alert(
+      'Invalid entries found:\n\n' +
+      invalidEntries.map(entry => entry.invalid).join('\n') +
+      '\n\nPlease correct them before searching or saving.'
+    );
+
+    return false;
+  }
+
+  const visibleKeys = new Set(editVisibleKeys);
+
+  // Keep all hidden entries untouched
+  const hiddenEntries = editWorkingEntries.filter(
+    entry => !visibleKeys.has(entry.key)
+  );
+
+  // Replace only the currently visible entries
+  editWorkingEntries = sortEntries([
+    ...hiddenEntries,
+    ...editedEntries
+  ]);
+
+  return true;
+}
+
+
+// =====================================
+// RENDER FILTERED EDIT ENTRIES
+// =====================================
+
+function renderEditReplacementSearch() {
 
   const search = document.getElementById(
     'editReplacementSearch'
   ).value.trim().toLowerCase();
 
-  const textarea = document.getElementById('editEntries');
+  const filteredEntries = editWorkingEntries.filter(entry => {
 
-  const text = textarea.value;
+    const fullEntry = entry.key + '=' + entry.value;
 
-  if (!search) {
-    textarea.setSelectionRange(0, 0);
-    textarea.scrollTop = 0;
-    return;
-  }
+    return fullEntry.toLowerCase().includes(search);
 
-  const lowerText = text.toLowerCase();
+  });
 
-  let start = findNext
-    ? textarea.selectionEnd
-    : 0;
-
-  let index = lowerText.indexOf(search, start);
-
-  // Restart search when no more matches exist
-  if (index === -1 && findNext) {
-    index = lowerText.indexOf(search, 0);
-  }
-
-  if (index === -1) {
-    showNotification('No matching replacement found.');
-    return;
-  }
-
-  // Highlight the matching text
-  textarea.setSelectionRange(
-    index,
-    index + search.length
+  editVisibleKeys = filteredEntries.map(
+    entry => entry.key
   );
 
-  // Scroll to the matching entry
-  const lineNumber = text
-    .substring(0, index)
-    .split('\n').length - 1;
+  document.getElementById('editEntries').value =
+    formatEntries(filteredEntries);
+}
 
-  const lineHeight =
-    parseFloat(getComputedStyle(textarea).lineHeight) || 32;
 
-  textarea.scrollTop = lineNumber * lineHeight;
+// =====================================
+// SEARCH EDIT REPLACEMENTS
+// =====================================
 
+function searchEditReplacement() {
+
+  // Save changes to the currently visible entries first
+  if (!syncVisibleEditEntries()) {
+    return;
+  }
+
+  // Display only matching entries
+  renderEditReplacementSearch();
 }
 
 function pasteReplacements() {
@@ -2091,9 +2130,12 @@ function changeReplacementFontSize(sourceId, change) {
 document.addEventListener('click', function(event) {
 
   // Ignore clicks inside any popup
-  if (event.target.closest('.floating-popup')) {
-    return;
-  }
+  if (
+  event.target.closest('.floating-popup') ||
+  event.target.closest('#removerPopup')
+) {
+  return;
+}
 
   // Ignore clicks on floating icons
   if (
