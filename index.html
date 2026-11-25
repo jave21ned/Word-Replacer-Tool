@@ -1807,6 +1807,10 @@ function toggleEditReplacements() {
   button.textContent = opening
     ? 'Close Editor'
     : 'Edit Replacements';
+
+  requestAnimationFrame(() => {
+    adjustEditEntryHeights();
+  });
 }
 
 function renderAddEntries(text = '') {
@@ -1930,6 +1934,17 @@ function syncVisibleEditEntries() {
   return true;
 }
 
+function adjustEditEntryHeights() {
+  const textareas = document.querySelectorAll(
+    '#editEntries .edit-entry-row textarea'
+  );
+
+  textareas.forEach(textarea => {
+    textarea.style.height = 'auto';
+    textarea.style.height =
+      Math.max(32, textarea.scrollHeight) + 'px';
+  });
+}
 
 // =====================================
 // RENDER FILTERED EDIT ENTRIES
@@ -1968,19 +1983,16 @@ function renderEditReplacementSearch() {
     textarea.rows = 1;
     textarea.spellcheck = false;
 
-    function adjustHeight() {
-  textarea.style.height = 'auto';
-  textarea.style.height = Math.max(32, textarea.scrollHeight) + 'px';
-}
-
-    textarea.addEventListener('input', adjustHeight);
+        textarea.addEventListener('input', adjustEditEntryHeights);
 
     row.appendChild(textarea);
     container.appendChild(row);
 
-    adjustHeight();
 
   });
+
+  adjustEditEntryHeights();
+
 }
 
 
@@ -2351,6 +2363,9 @@ function changeReplacementFontSize(sourceId, change) {
   );
 
   source.style.fontSize = newSize + 'px';
+  if (sourceId === 'editEntries') {
+    adjustEditEntryHeights();
+  }
 }
 
 // =====================================
@@ -2393,6 +2408,9 @@ function updateBackToTopVisibility() {
 }
 
 window.addEventListener('scroll', updateBackToTopVisibility);
+window.addEventListener('resize', () => {
+  adjustEditEntryHeights();
+});
 
 backToTopBtn.addEventListener('click', function() {
   window.scrollTo({
