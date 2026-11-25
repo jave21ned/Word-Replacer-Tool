@@ -523,6 +523,7 @@ button {
   display: block;
   width: 100%;
   min-height: 32px;
+  height: auto;
   box-sizing: border-box;
   padding: 0;
   margin: 0;
@@ -533,7 +534,7 @@ button {
   background: transparent;
   font-family: Arial, sans-serif;
   font-size: inherit;
-  line-height: 32px;
+  line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -564,6 +565,7 @@ button {
   display: block;
   width: 100%;
   min-height: 32px;
+  height: auto;
   box-sizing: border-box;
   padding: 0;
   margin: 0;
@@ -574,7 +576,7 @@ button {
   background: transparent;
   font-family: Arial, sans-serif;
   font-size: inherit;
-  line-height: 32px;
+  line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1791,9 +1793,9 @@ function renderAddEntries(text = '') {
     textarea.spellcheck = false;
 
     function adjustHeight() {
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
-    }
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.max(32, textarea.scrollHeight) + 'px';
+}
 
     textarea.addEventListener('input', adjustHeight);
 
@@ -1914,9 +1916,9 @@ function renderEditReplacementSearch() {
     textarea.spellcheck = false;
 
     function adjustHeight() {
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
-    }
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.max(32, textarea.scrollHeight) + 'px';
+}
 
     textarea.addEventListener('input', adjustHeight);
 
