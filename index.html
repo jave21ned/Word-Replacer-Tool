@@ -120,44 +120,6 @@ button {
   text-align:center;
 }
 
-/* remover icon */
-#removerIcon {
-  position: fixed;
-  right: 12px;
-  bottom: 12px;
-  width: 12px;
-  height: 12px;
-  background: #4da3ff;
-  border-radius: 50%;
-  opacity: 0.7;
-  cursor: pointer;
-}
-
-/* popup */
-#removerPopup {
-  display:none;
-  position:fixed;
-  right:10px;
-  bottom:40px;
-  width: calc(100% - 40px);
-  max-width: 360px;
-  background:#f8d7da;
-  padding:12px;
-  border-radius:8px;
-  box-shadow:0 0 8px rgba(0,0,0,.2);
-}
-
-#removerPopup textarea {
-  width:100%;
-  height:60px;
-}
-
-#removerPopup textarea {
-  width: 100%;
-  box-sizing: border-box;
-  margin-bottom: 8px;
-}
-
 #translateToggle {
   width: 16px;
   height: 16px;
@@ -280,7 +242,6 @@ button {
 }
 
 /* Prevent long filenames from exceeding their containers */
-#replacementFileSelect,
 #managerFileSelect {
   display: block;
   width: 100%;
@@ -424,12 +385,12 @@ button {
 }
 
 /* Add Replacements in Tab 1 */
-.add-replacements-section textarea {
+#addPopup textarea {
   width: 100%;
   box-sizing: border-box;
 }
 
-.add-replacements-section button {
+#addPopup button {
   width: 100%;
   box-sizing: border-box;
   margin-top: 8px;
@@ -517,7 +478,7 @@ button {
 }
 
 /* Divider lines inside editable textareas */
-.add-replacements-section textarea,
+#addPopup textarea,
 #editEntries {
   line-height: 32px;
   padding-top: 6px;
@@ -533,6 +494,96 @@ button {
 
   background-size: 100% 32px;
   background-attachment: local;
+}
+
+/* Floating tool icons */
+.floating-tool-icon {
+  position: fixed;
+  right: 15px;
+  z-index: 10000;
+  width: 42px;
+  height: 42px;
+  background: #0d47a1;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+#removerIcon {
+  bottom: 15px;
+}
+
+#folderIcon {
+  bottom: 67px;
+}
+
+#addIcon {
+  bottom: 119px;
+}
+
+#usedIcon {
+  bottom: 171px;
+}
+
+/* Floating popup panels */
+.floating-popup {
+  display: none;
+  position: fixed;
+  right: 68px;
+  bottom: 15px;
+  z-index: 9999;
+  width: calc(100% - 100px);
+  max-width: 360px;
+  max-height: 75vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+}
+
+#folderPopup {
+  background: #cce5ff;
+}
+
+#addPopup {
+  background: #fff3cd;
+}
+
+#usedPopup {
+  background: #eeeeee;
+}
+
+/* Popup input sizing */
+#addPopup textarea,
+#folderPopup input,
+#folderPopup select,
+#savedReplacementSearch {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#addPopup textarea {
+  min-height: 160px;
+}
+
+#addPopup button,
+#folderPopup button {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+/* Position remover settings popup beside floating icons */
+#removerPopup {
+  right: 68px;
+  bottom: 15px;
 }
 
 </style>
@@ -558,211 +609,142 @@ button {
   </button>
 </div>
 
+
 <!-- TAB 1: TEXT REPLACER -->
 <div id="tab1" class="tab-content active">
 
-  <div class="section blue-section">
-    <label for="replacementFileSelect">Select replacement file:</label>
-    <select id="replacementFileSelect"
-            onchange="loadReplacementFromTab1(this.value)">
-      <option value="">Choose a TXT file</option>
-    </select>
-  </div>
-
-<!-- ADD NEW REPLACEMENTS -->
-<div class="section yellow-section add-replacements-section">
-
-  <h3>Add New Replacements</h3>
-
-  <textarea id="newReplacements"
-    placeholder="Enter new replacements here, one entry per line.
-Example:
-夜扶桑= Ye Fusang
-謝棲棠= Xie Qitang"></textarea>
-
-  <button onclick="pasteReplacements()">Paste</button>
-
-  <button onclick="saveAddReplacements()">
-    Save Replacements
-  </button>
-
-</div>
-
+  <!-- CONTENT INPUT -->
   <div class="section yellow-section">
-    <label for="contentInput">Enter the content:</label>
-    <textarea id="contentInput" rows="6"
-      placeholder="输入需要处理的文本..."></textarea>
+
+    <label for="contentInput">Enter Content:</label>
+
+    <textarea id="contentInput"
+      rows="8"
+      placeholder="Paste or enter content here..."></textarea>
 
     <div class="content-actions">
       <button onclick="pasteContent()">Paste</button>
     </div>
+
   </div>
 
-  <div class="section">
-    <label for="charLimit">
-      Set Character Limit (Excluding Parentheses Content):
-    </label>
-
-    <input type="number" id="charLimit" value="3500" min="500">
-
-    <div style="margin-top: 2px; margin-bottom: 0; text-align: left;">
-      <label style="
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 16px;
-        line-height: 24px;
-      ">
-        <input type="checkbox" id="translateToggle" style="
-          width: 18px;
-          height: 18px;
-          margin: 0;
-        ">
-        <span>For translate?</span>
-      </label>
-    </div>
-  </div>
-
+  <!-- CHARACTER LIMIT -->
   <div class="section green-section">
-    <h3>Result:</h3>
-    <button onclick="processText()">Replace Words</button>
+
+    <label for="charLimit">Set Character Limit:</label>
+
+    <input id="charLimit"
+      type="number"
+      value="3500"
+      min="1">
+	<div>
+    <label>
+      <input type="checkbox" id="translateToggle">
+      For translate?
+    </label>
+	</div>
+
+  </div>
+
+  <!-- PROCESS BUTTON -->
+  <div class="section">
+    <button onclick="processText()">Process Text</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="section">
+
+    <h3>Result</h3>
+
     <div id="resultContainer"></div>
+
     <div id="copyNotification"></div>
+
   </div>
 
-  <div class="section used-replacements-section">
-    <h3>Used Replacements:</h3>
-    <div id="usedReplacements">No replacements used yet.</div>
-  </div>
+</div> <!-- Close Tab 1 -->
 
-</div>
 
 
 <!-- TAB 2: REPLACEMENT MANAGER -->
 <div id="tab2" class="tab-content">
 
-  <div class="manager-section blue-section">
-    <h3>Replacement Folder</h3>
+  <!-- SAVED REPLACEMENTS -->
+  <div class="manager-section green-section">
 
-    <button onclick="connectFolder()">Choose / Reconnect Folder</button>
+    <div class="replacement-heading">
 
-    <div id="folderStatus">
-      No folder selected.
+      <h3>Saved Replacements</h3>
+
+      <div class="heading-controls">
+
+        <button class="resize-btn"
+          onclick="changeReplacementFontSize('addExistingEntries', 1)">+</button>
+
+        <button class="resize-btn"
+          onclick="changeReplacementFontSize('addExistingEntries', -1)">−</button>
+
+        <button class="fullscreen-btn"
+          onclick="openReplacementFullscreen('addExistingEntries', 'Saved Replacements')">
+          ⛶
+        </button>
+
+      </div>
     </div>
-  </div>
 
-<div class="manager-section yellow-section">
-  <h3>Select Replacement File</h3>
+    <input
+      type="search"
+      id="savedReplacementSearch"
+      placeholder="Search saved replacements..."
+      oninput="renderSavedReplacements()">
 
-  <div class="radio-toggle-group">
-    <label>
-      <input type="radio" name="fileChoice"
-        value="existing" checked
-        onchange="toggleFileChoice()">
-      Use Existing File
-    </label>
+    <div id="addExistingEntries"
+      class="saved-replacements-display">
+      Select a replacement file to display its saved entries.
+    </div>
 
-    <label>
-      <input type="radio" name="fileChoice"
-        value="new"
-        onchange="toggleFileChoice()">
-      Create New File
-    </label>
-  </div>
+    <button id="editToggleButton"
+      onclick="toggleEditReplacements()">
+      Edit Replacements
+    </button>
 
-  <div id="existingFilePanel">
-    <label class="manager-label" for="managerFileSelect">
-      Existing TXT files:
-    </label>
+    <!-- EDIT REPLACEMENTS -->
+    <div id="editModePanel" style="display:none;">
 
-    <select id="managerFileSelect"
-      onchange="loadReplacementFromManager(this.value)">
-      <option value="">Choose a TXT file</option>
-    </select>
-  </div>
+      <div class="replacement-heading">
 
-  <div id="newFilePanel" style="display:none;">
-    <label class="manager-label" for="newFileName">
-      New TXT file name:
-    </label>
+        <h3>Edit All Replacements</h3>
 
-    <input id="newFileName"
-      type="text"
-      placeholder="Enter file name">
+        <div class="heading-controls">
 
-    <button onclick="createNewFile()">Create New File</button>
-  </div>
-</div>
+          <button class="resize-btn"
+            onclick="changeReplacementFontSize('editEntries', 1)">+</button>
 
+          <button class="resize-btn"
+            onclick="changeReplacementFontSize('editEntries', -1)">−</button>
 
-<!-- SAVED REPLACEMENTS -->
-<div class="manager-section green-section">
+          <button class="fullscreen-btn"
+            onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
+            ⛶
+          </button>
 
-  <div class="replacement-heading">
+        </div>
+      </div>
 
-    <h3>Saved Replacements</h3>
+      <textarea id="editEntries"
+        placeholder="The selected file's replacements will appear here."></textarea>
 
-    <div class="heading-controls">
-
-      <button class="resize-btn"
-        onclick="changeReplacementFontSize('addExistingEntries', 1)">+</button>
-
-      <button class="resize-btn"
-        onclick="changeReplacementFontSize('addExistingEntries', -1)">−</button>
-
-      <button class="fullscreen-btn"
-        onclick="openReplacementFullscreen('addExistingEntries', 'Saved Replacements')">
-        ⛶
+      <button onclick="saveEditedReplacements()">
+        Save Changes
       </button>
 
     </div>
-  </div>
 
-  <div id="addExistingEntries" class="saved-replacements-display">
-    Select a replacement file to display its saved entries.
-  </div>
-
-  <button id="editToggleButton"
-    onclick="toggleEditReplacements()">
-    Edit Replacements
-  </button>
-
-
-<!-- EDIT REPLACEMENTS -->
-<div id="editModePanel" style="display:none;">
-
-  <div class="replacement-heading">
-
-    <h3>Edit All Replacements</h3>
-
-    <div class="heading-controls">
-
-      <button class="resize-btn"
-        onclick="changeReplacementFontSize('editEntries', 1)">+</button>
-
-      <button class="resize-btn"
-        onclick="changeReplacementFontSize('editEntries', -1)">−</button>
-
-      <button class="fullscreen-btn"
-        onclick="openReplacementFullscreen('editEntries', 'Edit All Replacements')">
-        ⛶
-      </button>
-
-    </div>
-  </div>
-
-  <textarea id="editEntries"
-    placeholder="The selected file's replacements will appear here."></textarea>
-
-  <button onclick="saveEditedReplacements()">
-    Save Changes
-  </button>
-
-</div>
-
-</div> <!-- Close Saved Replacements section -->
+  </div> <!-- Close Saved Replacements section -->
 
 </div> <!-- Close Tab 2 -->
+
+
 
 <!-- FULLSCREEN REPLACEMENT VIEWER -->
 <div id="replacementFullscreen">
@@ -788,11 +770,125 @@ Example:
 
 </div>
 
-<!-- FLOATING REMOVER SETTINGS BUTTON -->
+<!-- FLOATING TOOL ICONS -->
+<div id="folderIcon" class="floating-tool-icon"
+  onclick="toggleFloatingPopup('folderPopup')"
+  title="Replacement Folder">
+  📁
+</div>
+
+<div id="addIcon" class="floating-tool-icon"
+  onclick="toggleFloatingPopup('addPopup')"
+  title="Add New Replacements">
+  +
+</div>
+
+<div id="usedIcon" class="floating-tool-icon"
+  onclick="toggleFloatingPopup('usedPopup')"
+  title="Used Replacements">
+  📄
+</div>
+
 <div id="removerIcon"
   onclick="toggleRemoverPopup()"
   title="Remover Settings">
   i
+</div>
+
+<!-- FOLDER AND FILE SELECTION POPUP -->
+<div id="folderPopup" class="floating-popup">
+
+  <h3>Replacement Folder</h3>
+
+  <button onclick="connectFolder()">
+    Choose / Reconnect Folder
+  </button>
+
+  <div id="folderStatus">
+    No folder selected.
+  </div>
+
+  <hr>
+
+  <h3>Select Replacement File</h3>
+
+  <div class="radio-toggle-group">
+    <label>
+      <input type="radio" name="fileChoice"
+        value="existing" checked
+        onchange="toggleFileChoice()">
+      Use Existing File
+    </label>
+
+    <label>
+      <input type="radio" name="fileChoice"
+        value="new"
+        onchange="toggleFileChoice()">
+      Create New File
+    </label>
+  </div>
+
+  <div id="existingFilePanel">
+
+    <label class="manager-label" for="managerFileSelect">
+      Existing TXT files:
+    </label>
+
+    <select id="managerFileSelect"
+      onchange="loadReplacementFromManager(this.value)">
+      <option value="">Choose a TXT file</option>
+    </select>
+
+  </div>
+
+  <div id="newFilePanel" style="display:none;">
+
+    <label class="manager-label" for="newFileName">
+      New TXT file name:
+    </label>
+
+    <input id="newFileName"
+      type="text"
+      placeholder="Enter file name">
+
+    <button onclick="createNewFile()">
+      Create New File
+    </button>
+
+  </div>
+
+</div>
+
+<!-- ADD REPLACEMENTS POPUP -->
+<div id="addPopup" class="floating-popup">
+
+  <h3>Add New Replacements</h3>
+
+  <textarea id="newReplacements"
+    placeholder="Enter new replacements here, one entry per line.
+Example:
+夜扶桑= Ye Fusang
+謝棲棠= Xie Qitang"></textarea>
+
+  <button onclick="pasteReplacements()">
+    Paste
+  </button>
+
+  <button onclick="saveAddReplacements()">
+    Save Replacements
+  </button>
+
+</div>
+
+<!-- USED REPLACEMENTS POPUP -->
+<div id="usedPopup" class="floating-popup">
+
+  <h3>Used Replacements</h3>
+
+  <div id="usedReplacements">
+    No replacements used yet.
+  </div>
+
 </div>
 
 <!-- REMOVER SETTINGS POPUP -->
@@ -1093,7 +1189,6 @@ async function refreshFileLists() {
   }));
 
   const selectors = [
-    document.getElementById('replacementFileSelect'),
     document.getElementById('managerFileSelect')
   ];
 
@@ -1115,8 +1210,6 @@ async function refreshFileLists() {
   });
 
   if (selectedFileName && files.includes(selectedFileName)) {
-    document.getElementById('replacementFileSelect').value =
-      selectedFileName;
 
     document.getElementById('managerFileSelect').value =
       selectedFileName;
@@ -1127,12 +1220,6 @@ async function refreshFileLists() {
 // =====================================
 // SELECT AND LOAD FILE
 // =====================================
-
-async function loadReplacementFromTab1(name) {
-  if (name) {
-    await loadFileByName(name);
-  }
-}
 
 async function loadReplacementFromManager(name) {
   if (name) {
@@ -1163,17 +1250,13 @@ activeFileSettings = parts.settings || {
 
 loadSettingsIntoFields(activeFileSettings);
 
-    document.getElementById('replacementFileSelect').value = name;
     document.getElementById('managerFileSelect').value = name;
 
-    const entries = sortEntries(
-  parseReplacementEntries(parts.replacementText)
-);
+renderSavedReplacements();
 
-displayReplacementEntries(
-  'addExistingEntries',
-  formatEntries(entries),
-  'No saved replacements.'
+const entries = sortEntries(
+  parseReplacementEntries(parts.replacementText)
+    .filter(entry => !entry.invalid)
 );
 
     document.getElementById('editEntries').value =
@@ -1269,52 +1352,56 @@ toggleFileChoice();
 
 function parseReplacementEntries(raw) {
   return raw.split(/!!|\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean)
+    .filter(line => line.trim())
     .map(line => {
       const i = line.indexOf('=');
 
-      if (i === -1) return null;
+      if (i === -1) {
+        return { invalid: line };
+      }
 
       const key = line.slice(0, i).trim();
-      const value = line.slice(i + 1);
 
-      if (!key) return null;
+      if (!key) {
+        return { invalid: line };
+      }
+
+      const value = line.slice(i + 1)
+        .replace(/\\+$/, '');
 
       return {
         key: key,
         value: value
       };
-    })
-    .filter(Boolean);
+    });
 }
 
-function countChineseCharacters(text) {
-  return (text.match(/\p{Script=Han}/gu) || []).length;
-}
 
 function sortEntries(entries) {
-  return [...entries].sort((a, b) => {
-    const countA = countChineseCharacters(a.key);
-    const countB = countChineseCharacters(b.key);
 
-    if (countA !== countB) {
-      return countB - countA;
+  function countChineseCharacters(text) {
+    return (text.match(/\p{Script=Han}/gu) || []).length;
+  }
+
+  return [...entries].sort((a, b) => {
+
+    const countDifference =
+      countChineseCharacters(b.key) -
+      countChineseCharacters(a.key);
+
+    if (countDifference !== 0) {
+      return countDifference;
     }
 
-    const englishComparison = a.value.trim().localeCompare(
-      b.value.trim(),
+    return (a.value || '').localeCompare(
+      b.value || '',
       'en',
       { sensitivity: 'base' }
     );
 
-    if (englishComparison !== 0) {
-      return englishComparison;
-    }
-
-    return a.key.localeCompare(b.key);
   });
 }
+
 
 function formatEntries(entries) {
   return entries.map(entry =>
@@ -1342,6 +1429,33 @@ function displayReplacementEntries(elementId, text, emptyMessage) {
   });
 }
 
+function renderSavedReplacements() {
+
+  const search = document.getElementById(
+    'savedReplacementSearch'
+  ).value.trim().toLowerCase();
+
+  const entries = sortEntries(
+    parseReplacementEntries(activeReplacementText)
+      .filter(entry => !entry.invalid)
+  );
+
+  const filteredEntries = entries.filter(entry => {
+
+    const fullEntry = entry.key + '=' + entry.value;
+
+    return fullEntry.toLowerCase().includes(search);
+  });
+
+  displayReplacementEntries(
+    'addExistingEntries',
+    formatEntries(filteredEntries),
+    search
+      ? 'No matching replacements found.'
+      : 'No saved replacements.'
+  );
+}
+
 
 // =====================================
 // SAVE REPLACEMENTS
@@ -1358,18 +1472,30 @@ async function saveManagerFile() {
 ).value;
 
   let entries = [];
+  let invalidEntries = [];
 
   if (mode === 'add') {
+
     const existing = parseReplacementEntries(
   getFileParts(selectedFileText).replacementText
-);
-
+).filter(entry => !entry.invalid);
 
     const additions = parseReplacementEntries(
       document.getElementById('newReplacements').value
     );
 
-    entries = [...existing];
+    invalidEntries = additions.filter(entry => entry.invalid);
+
+    if (invalidEntries.length > 0) {
+      alert(
+        'Invalid entries found:\n\n' +
+        invalidEntries.map(entry => entry.invalid).join('\n') +
+        '\n\nPlease correct them before saving.'
+      );
+      return;
+    }
+
+    entries = existing.filter(entry => !entry.invalid);
 
     const existingKeys = new Set(
       existing.map(entry => entry.key)
@@ -1398,9 +1524,23 @@ async function saveManagerFile() {
     }
 
   } else {
-    entries = parseReplacementEntries(
+
+    const editedEntries = parseReplacementEntries(
       document.getElementById('editEntries').value
     );
+
+    invalidEntries = editedEntries.filter(entry => entry.invalid);
+
+    if (invalidEntries.length > 0) {
+      alert(
+        'Invalid entries found:\n\n' +
+        invalidEntries.map(entry => entry.invalid).join('\n') +
+        '\n\nPlease correct them before saving.'
+      );
+      return;
+    }
+
+    entries = editedEntries;
 
     const keys = new Set();
 
@@ -1421,6 +1561,12 @@ async function saveManagerFile() {
     alert('There are no valid replacement entries to save.');
     return;
   }
+
+  // Remove trailing backslashes before saving
+  entries = entries.map(entry => ({
+    ...entry,
+    value: entry.value.replace(/\\+$/, '')
+  }));
 
   entries = sortEntries(entries);
 
@@ -1445,11 +1591,7 @@ if (parts.settings) {
   activeFileSettings = parts.settings;
 }
 
-displayReplacementEntries(
-  'addExistingEntries',
-  replacementText,
-  'No saved replacements.'
-);
+renderSavedReplacements();
 
 document.getElementById('editEntries').value = replacementText;
 
@@ -1521,11 +1663,29 @@ function pasteContent() {
   });
 }
 
-function toggleRemoverPopup() {
-  const p = document.getElementById('removerPopup');
+function toggleFloatingPopup(popupId) {
 
-  p.style.display =
-    p.style.display === 'block' ? 'none' : 'block';
+  const popups = [
+    'folderPopup',
+    'addPopup',
+    'usedPopup',
+    'removerPopup'
+  ];
+
+  const target = document.getElementById(popupId);
+  const opening = target.style.display !== 'block';
+
+  popups.forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+
+  if (opening) {
+    target.style.display = 'block';
+  }
+}
+
+function toggleRemoverPopup() {
+  toggleFloatingPopup('removerPopup');
 }
 
 function flattenInput(t, separator = '!!') {
