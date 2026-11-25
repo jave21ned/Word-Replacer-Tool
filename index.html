@@ -264,6 +264,33 @@ button {
   margin: 0;
 }
 
+/* File choice buttons */
+.radio-toggle-group {
+  gap: 8px;
+}
+
+.radio-toggle-group label {
+  flex: 1;
+  justify-content: center;
+  padding: 12px 5px;
+  background: white;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.radio-toggle-group input[type="radio"] {
+  display: none;
+}
+
+.radio-toggle-group label:has(input:checked) {
+  background: #0d47a1;
+  color: white;
+  border-color: #0d47a1;
+}
+
 /* Prevent long filenames from exceeding their containers */
 #managerFileSelect {
   display: block;
@@ -1334,6 +1361,10 @@ async function refreshFileLists() {
 async function loadReplacementFromManager(name) {
   if (name) {
     await loadFileByName(name);
+
+    if (selectedFileName === name) {
+      closeFloatingPopups();
+    }
   }
 }
 
@@ -1797,9 +1828,9 @@ function renderAddEntries(text = '') {
     textarea.spellcheck = false;
 
     function adjustHeight() {
-  textarea.style.height = 'auto';
-  textarea.style.height = Math.max(32, textarea.scrollHeight) + 'px';
-}
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.max(32, textarea.scrollHeight) + 'px';
+    }
 
     textarea.addEventListener('input', adjustHeight);
 
@@ -1808,6 +1839,24 @@ function renderAddEntries(text = '') {
 
     adjustHeight();
   });
+
+  // Allow clicking anywhere in the white editor to start typing
+  container.onclick = function(event) {
+    if (event.target.tagName === 'TEXTAREA') return;
+
+    const row = event.target.closest('.add-entry-row');
+
+    const textarea = row
+      ? row.querySelector('textarea')
+      : container.querySelector('.add-entry-row:last-child textarea');
+
+    if (textarea) {
+      textarea.focus();
+
+      const position = textarea.value.length;
+      textarea.setSelectionRange(position, position);
+    }
+  };
 }
 
 function getAddEntriesText() {
